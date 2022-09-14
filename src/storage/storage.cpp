@@ -33,9 +33,9 @@ void physicalPage::writePage(const char *content) {
 }
 
 PhysicalPageID storageManager::addPage() {
-    this->cur_page_id_ += 1;
     physicalPage page(this->cur_page_id_);
     this->pages_.push_back(page);
+    this->cur_page_id_ += 1;
     return this->cur_page_id_;
 }
 

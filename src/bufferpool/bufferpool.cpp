@@ -10,8 +10,10 @@
 bufferPoolManager::bufferPoolManager(storageManager *stmgr) {
     this->stmgr_ = stmgr;
     // TODO: initialize the pages here
-    this->pages_.reserve(this->no_pages_);
-    this->page_table_.reserve(this->no_pages_);
+    this->pages_ = std::vector<heapPage>(this->no_pages_);
+    for (auto cnt = 0; cnt < this->no_pages_; cnt++) {
+        this->page_table_.insert(std::pair(&this->pages_[cnt], INVALID_PHYSICAL_PAGE_ID));
+    }
     this->is_dirty_.reserve(this->no_pages_);
     this->pin_cnt_.reserve(this->no_pages_);
 }
@@ -43,11 +45,13 @@ void bufferPoolManager::readFromDisk(PhysicalPageID psy_id) {
             it.first->timestamp = std::time(nullptr);
             this->pin_cnt_[cnt] += 1;
             this->is_dirty_[cnt] = false;
+            cnt += 1;
             return;
         }
     }
     heapPage *cleanedPage = evict();
     this->stmgr_->readPage(psy_id, cleanedPage->content);
+    this->page_table_[cleanedPage] = psy_id;
     cleanedPage->timestamp = std::time(nullptr);
 }
 
@@ -57,5 +61,9 @@ void bufferPoolManager::writeToDisk(PhysicalPageID psy_id, heapPage page) {
 
 heapPage::heapPage() {
     this->timestamp = std::time(nullptr);
-    this->content = (char *) std::malloc((std::size_t) HEAP_SIZE);
+    std::memset(this->content, 0, HEAP_SIZE);
+}
+
+heapPage::~heapPage() {
+//    std::free(&this->content);
 }
