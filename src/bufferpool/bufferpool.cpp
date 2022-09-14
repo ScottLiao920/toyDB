@@ -9,12 +9,11 @@
 
 bufferPoolManager::bufferPoolManager(storageManager *stmgr) {
     this->stmgr_ = stmgr;
-    for (auto cnt = 0; cnt < this->no_pages_; cnt++) {
-        this->pages_[cnt] = heapPage();
-        this->page_table_.insert(std::pair(&this->pages_[cnt], INVALID_PHYSICAL_PAGE_ID));
-        this->is_dirty_[cnt] = false;
-        this->pin_cnt_[cnt] = 0;
-    }
+    // TODO: initialize the pages here
+    this->pages_.reserve(this->no_pages_);
+    this->page_table_.reserve(this->no_pages_);
+    this->is_dirty_.reserve(this->no_pages_);
+    this->pin_cnt_.reserve(this->no_pages_);
 }
 
 heapPage *bufferPoolManager::evict() {

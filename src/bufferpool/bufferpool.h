@@ -29,7 +29,7 @@ private:
     size_t no_pages_ = 100;
 
 public:
-    bufferPoolManager(storageManager *);
+    explicit bufferPoolManager(storageManager *);
 
     void readFromDisk(PhysicalPageID);
 
