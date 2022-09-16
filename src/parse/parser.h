@@ -37,10 +37,11 @@ enum expr_type {
 class expr {
 public:
     expr_type type;
-    std::string alias;
+    std::string alias[16];
     std::vector<std::string> data_srcs;
 
     expr();
+
     ~expr();
 };
 

@@ -33,12 +33,22 @@ void parser::parse(const std::string &sql_string) {
         return;
     }
     upp_sql = upp_sql.substr(6);
-    std::vector<std::string> tmp;
-    iter_split(tmp, upp_sql, boost::algorithm::first_finder("FROM"));
+    std::vector<std::string> TL_RTE; //vector of raw string for target list and range table (optional)
+    iter_split(TL_RTE, upp_sql, boost::algorithm::first_finder("FROM"));
     std::vector<std::string> target_list;
-    boost::split(target_list, tmp[0], boost::is_any_of(","));
+    boost::split(target_list, TL_RTE[0], boost::is_any_of(","));
     for (auto &it: target_list) {
         expr *cur_expr = (expr *) malloc(sizeof(expr));
+
+        // check for alias
+        if (it.find("AS") != std::string::npos) {
+            std::vector<std::string> name_alias;
+            iter_split(name_alias, it, boost::algorithm::first_finder("AS"));
+            assert(name_alias.size() == 2);
+            strcpy(reinterpret_cast<char *>(&cur_expr->alias), reinterpret_cast<const char *>(&name_alias[1]));
+//            cur_expr->alias += name_alias[1];
+            it = it.substr(0, it.find("AS"));
+        }
 
         // check for aggregation, nested aggregation (MIN(MAX(...) )) currently not supported.
         if (it.find("MIN(") != std::string::npos) {
@@ -76,13 +86,8 @@ void parser::parse(const std::string &sql_string) {
             it = it.substr(it.find("SUM("));
             cur_expr->data_srcs.push_back(it.substr(0, it.find(")")));
         }
-
-        // check for alias
-        if (it.find("AS") != std::string::npos) {
-            std::vector<std::string> alias;
-            iter_split(alias, it, boost::algorithm::first_finder("AS"));
-            assert(alias.size() == 2);
-            cur_expr->alias = alias[1];
+        else {
+            cur_expr->type = COL;
         }
 
         this->stmt_tree_.target_list_.push_back(cur_expr);
