@@ -14,6 +14,14 @@
 
 #define INVALID_PHYSICAL_PAGE_ID 0
 typedef unsigned int PhysicalPageID;
+typedef unsigned int RelID;
+typedef unsigned int RowID;
+typedef unsigned int ColID;
+
+enum storageMethod {
+    row_store, col_store
+};
+
 
 class physicalPage {
 private:
@@ -31,7 +39,7 @@ public:
     void writePage(const char *);
 };
 
-class storageManager : physicalPage {
+class storageManager {
 private:
     PhysicalPageID cur_page_id_ = 0;
     std::vector<physicalPage> pages_;
@@ -45,5 +53,30 @@ public:
     void readPage(PhysicalPageID, void *);
 };
 
+class column {
+    std::string name;
+    size_t width;
+    size_t cnt;
+    RelID rel;
+    std::vector<PhysicalPageID> pages;
+public:
+    column(std::string, size_t, RelID);
+//    std::vector<>
+};
+
+class row {
+    char *name;
+    size_t width;
+    size_t cnt;
+    RelID rel;
+};
+
+class rel {
+    RelID id;
+    std::vector<column> cols;
+    std::vector<row> rows;
+    storageMethod storage_method;
+
+};
 
 #endif //TOYDB_STORAGE_H

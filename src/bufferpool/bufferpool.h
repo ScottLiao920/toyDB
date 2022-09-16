@@ -11,15 +11,24 @@
 
 #define HEAP_SIZE 8192
 #define BUFFER_POOL_SIZE 1
+typedef unsigned int HEAP_PAGE_ID;
 
 class heapPage {
 public:
-    char content[HEAP_SIZE];
+    char content[HEAP_SIZE]{};
+    HEAP_PAGE_ID id;
     time_t timestamp;
+    size_t data_cnt;
+    char *idx_ptr;
+    char *data_ptr;
 
     heapPage();
 
     ~heapPage();
+
+    bool insert(const char *, size_t);
+
+    void remove(int);
 };
 
 class bufferPoolManager {
@@ -34,14 +43,19 @@ private:
 public:
     explicit bufferPoolManager(storageManager *);
 
+    void insertToFrame(int, const char *, size_t);
+
+    void insertToFrame(heapPage *, const char *, size_t);
+
     void readFromDisk(PhysicalPageID);
 
-    void writeToDisk(PhysicalPageID, heapPage);
+    void writeToDisk(PhysicalPageID, int);
 
-    void printContent(int idx) { std::cout << idx << this->pages_[idx].content << std::endl; }
+    void printContent(int idx);
 
     heapPage *evict();
 
+    ~bufferPoolManager();
 };
 
 

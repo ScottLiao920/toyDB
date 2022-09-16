@@ -40,9 +40,20 @@ PhysicalPageID storageManager::addPage() {
 }
 
 void storageManager::writePage(PhysicalPageID page_id, void *content) {
+    if (page_id >= this->cur_page_id_) {
+        addPage();
+        this->writePage(page_id, content);
+        return;
+    }
     pages_[page_id].writePage((const char *) content);
 }
 
 void storageManager::readPage(PhysicalPageID page_id, void *dst) {
     pages_[page_id].readPage((char *) dst);
+}
+
+column::column(std::string name, size_t size, RelID par_table) {
+    this->name = name;
+    this->width = size;
+    this->rel = par_table;
 }
