@@ -12,25 +12,59 @@ enum command_type {
     INSERT,
     UPDATE,
     DELETE,
-    INVALID
+    INVALID_COMMAND
+};
+
+enum comparision {
+    equal,
+    lt,
+    ne,
+    gt,
+    egt,
+    elt,
+    like,
+    NO_COMP
+};
+
+enum aggr {
+    MIN, MAX, COUNT, AVG, SUM, NO_AGGR
+};
+
+enum expr_type {
+    AGGR, COMP, COL
 };
 
 class expr {
+public:
+    expr_type type;
+    std::string alias;
+    std::vector<std::string> data_srcs;
 
+    expr();
+    ~expr();
+};
+
+class aggr_expr : expr {
+public:
+    aggr aggr_type;
+};
+
+class comparison_expr : expr {
+public:
+    comparision comparision_type;
 };
 
 class queryTree {
+public:
     std::vector<RelID> range_table_;
     std::vector<RelID>::size_type result_idx_ = 0;
-    std::vector<expr> target_list_;
-    std::vector<expr> qual_;
+    std::vector<expr *> target_list_;
+    std::vector<expr *> qual_;
     queryTree *left_;
     queryTree *right_;
     bool hasAgg = false;
     bool hasGroup = false;
 
-
-public:
     queryTree();
 
     command_type command_;

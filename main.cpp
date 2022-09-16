@@ -22,6 +22,6 @@ int main() {
 //    bpmgr.writeToDisk(1, 0);
     std::cout << dst;
     parser p;
-    p.parse("SELECT 1");
+    p.parse("SELECT MAX(1) as fck");
     return 0;
 }
