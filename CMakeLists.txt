@@ -3,4 +3,4 @@ project(toyDB)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(toyDB main.cpp src/storage/storage.cpp src/storage/storage.h src/bufferpool/bufferpool.cpp src/parse/parser.cpp src/parse/parser.h)
+add_executable(toyDB main.cpp src/storage/storage.cpp src/storage/storage.h src/bufferpool/bufferpool.cpp src/parse/parser.cpp src/parse/parser.h src/planner/planner.cpp src/planner/planner.h)

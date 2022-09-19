@@ -22,6 +22,6 @@ int main() {
 //    bpmgr.writeToDisk(1, 0);
     std::cout << dst;
     parser p;
-    p.parse("SELECT MAX(1) as fck");
+    p.parse("SELECT SUM(*) as fck, col1 from table1, table2 where pred1, pred2");
     return 0;
 }
