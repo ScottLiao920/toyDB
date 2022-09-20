@@ -23,5 +23,10 @@ int main() {
     std::cout << dst;
     parser p;
     p.parse("SELECT SUM(*) as fck, col1 from table1, table2 where table1.id = table2.id and tabel2.col2 < 100");
+
+    rel table1;
+    table1.set_name_("table1");
+    column col1;
+
     return 0;
 }

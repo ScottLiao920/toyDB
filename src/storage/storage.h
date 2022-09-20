@@ -65,17 +65,40 @@ public:
 };
 
 class row {
-    char *name;
+    std::string name;
     size_t width;
     size_t cnt;
     RelID rel;
+    std::vector<PhysicalPageID> pages;
+public:
+    row(std::string, size_t, RelID);
 };
 
 class rel {
     RelID id;
+    std::string name;
     std::vector<column> cols;
     std::vector<row> rows;
     storageMethod storage_method;
+
+public:
+    void set_name_(std::string);
+
+    void add_rows(std::vector<row>);
+
+    void add_rows(const std::vector<std::string> &, const std::vector<size_t> &);
+
+    void add_row(const row &);
+
+    void add_row(const std::string &, const size_t &);
+
+    void add_columns(std::vector<column>);
+
+    void add_columns(const std::vector<std::string> &, const std::vector<size_t> &);
+
+    void add_column(const column &);
+
+    void add_column(const std::string &, const size_t &);
 
 };
 

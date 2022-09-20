@@ -3,6 +3,7 @@
 //
 
 #include <cstring>
+#include <utility>
 #include "storage.h"
 
 
@@ -52,8 +53,55 @@ void storageManager::readPage(PhysicalPageID page_id, void *dst) {
     pages_[page_id].readPage((char *) dst);
 }
 
-column::column(std::string name, size_t size, RelID par_table) {
-    this->name = name;
+column::column(std::string inp_name, size_t size, RelID par_table) {
+    this->name = inp_name;
+    this->width = size;
+    this->rel = par_table;
+}
+
+void rel::set_name_(std::string inp) {
+    this->name = std::move(inp);
+}
+
+void rel::add_rows(std::vector<row> inp_rows) {
+    this->rows = inp_rows;
+}
+
+void rel::add_columns(std::vector<column> inp_cols) {
+    this->cols = inp_cols;
+}
+
+void rel::add_rows(const std::vector<std::string> &names, const std::vector<size_t> &widths) {
+    for (std::vector<size_t>::size_type i = 0; i < names.size(); ++i) {
+        this->rows.emplace_back(names[i], widths[i], this->id);
+    }
+}
+
+void rel::add_columns(const std::vector<std::string> &names, const std::vector<size_t> &widths) {
+    for (std::vector<size_t>::size_type i = 0; i < names.size(); ++i) {
+        this->cols.emplace_back(names[i], widths[i], this->id);
+    }
+}
+
+void rel::add_row(const std::string &inp_name, const size_t &inp_size) {
+    this->rows.emplace_back(inp_name, inp_size, this->id);
+}
+
+void rel::add_row(const row &inp_row) {
+    this->rows.push_back(inp_row);
+}
+
+void rel::add_column(const std::string &inp_name, const size_t &inp_size) {
+    this->cols.emplace_back(inp_name, inp_size, this->id);
+}
+
+void rel::add_column(const column &inp_column) {
+    this->cols.push_back(inp_column);
+}
+
+
+row::row(std::string inp_name, size_t size, RelID par_table) {
+    this->name = inp_name;
     this->width = size;
     this->rel = par_table;
 }
