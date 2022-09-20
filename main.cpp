@@ -22,6 +22,6 @@ int main() {
 //    bpmgr.writeToDisk(1, 0);
     std::cout << dst;
     parser p;
-    p.parse("SELECT SUM(*) as fck, col1 from table1, table2 where pred1, pred2");
+    p.parse("SELECT SUM(*) as fck, col1 from table1, table2 where table1.id = table2.id and tabel2.col2 < 100");
     return 0;
 }

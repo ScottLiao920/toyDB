@@ -34,7 +34,7 @@ void parser::parse(const std::string &sql_string) {
     }
     upp_sql = upp_sql.substr(6);
     std::vector<std::string> TL_RTE; //vector of raw string for target list and range table (optional)
-    iter_split(TL_RTE, upp_sql, boost::algorithm::first_finder("FROM"));
+    boost::iter_split(TL_RTE, upp_sql, boost::algorithm::first_finder("FROM"));
     std::vector<std::string> target_list;
     boost::split(target_list, TL_RTE[0], boost::is_any_of(","));
     for (auto &it: target_list) {
@@ -94,10 +94,54 @@ void parser::parse(const std::string &sql_string) {
 
         this->stmt_tree_.target_list_.push_back(cur_expr);
     }
-    std::vector<std::string> range_table;
-    boost::split(this->stmt_tree_.range_table_, TL_RTE[1], boost::is_any_of(","));
-    // TODO: lookup a system catalog and map rte name to relid
 
+    // split remaining SQL statement into range table list and qualifications
+    std::vector<std::string> RTE_qual;
+    boost::iter_split(RTE_qual, TL_RTE[1], boost::algorithm::first_finder("WHERE"));
+
+    boost::split(this->stmt_tree_.range_table_, RTE_qual[0], boost::is_any_of(","));
+    // TODO: lookup a system catalog and map rte name to relid
+    std::vector<std::string> quals;
+    boost::iter_split(quals, RTE_qual[1], boost::algorithm::first_finder("AND"));
+    for (const auto &it: quals) {
+        // check qualifications in WHERE clause
+        expr *cur_qual = (expr *) std::malloc(sizeof(expr));
+        std::smatch op;
+        std::regex op_regex("[=<>!]");
+        std::regex_search(it, op, op_regex);
+        if (not op.empty()) {
+            cur_qual->type = COMP;
+            std::string all_op = op.format("$&");
+            // check comparison type and assign it accordingly. Maybe have a dict for it?
+            if (all_op == "<=") {
+                ((comparison_expr *) cur_qual)->comparision_type = ngt;
+            }
+            else if (all_op == "<") {
+                ((comparison_expr *) cur_qual)->comparision_type = lt;
+            }
+            else if (all_op == ">") {
+                ((comparison_expr *) cur_qual)->comparision_type = gt;
+            }
+            else if (all_op == ">=") {
+                ((comparison_expr *) cur_qual)->comparision_type = nlt;
+            }
+            else if (all_op == "=") {
+                ((comparison_expr *) cur_qual)->comparision_type = equal;
+            }
+            else {
+                ((comparison_expr *) cur_qual)->comparision_type = NO_COMP;
+            }
+        }
+        else {
+            std::cout << "Parse Error: Qualification List Init Failed." << std::endl;
+        }
+        std::string first_operand, second_operand;
+        first_operand = op.format("$`");
+        second_operand = op.format("$'");
+        cur_qual->data_srcs.emplace_back(first_operand);
+        cur_qual->data_srcs.emplace_back(second_operand);
+        this->stmt_tree_.qual_.emplace_back(cur_qual);
+    }
 }
 
 expr::expr() {

@@ -20,9 +20,9 @@ enum comparision {
     lt,
     ne,
     gt,
-    egt,
-    elt,
-    like,
+    ngt,
+    nlt,
+//    like,
     NO_COMP
 };
 
