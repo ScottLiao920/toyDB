@@ -5,24 +5,10 @@
 #ifndef TOYDB_STORAGE_H
 #define TOYDB_STORAGE_H
 
-#include <iostream>
-#include <fstream>
-#include <unistd.h>
-#include <vector>
+#include "common.h"
+#include "bufferpool.h"
 
-#define FILEPATH "/home/liaoc/Projects/toyDB/data/"
-
-#define INVALID_PHYSICAL_PAGE_ID 0
-#define PHYSICAL_PAGE_SIZE 8192
-typedef unsigned int PhysicalPageID;
-typedef unsigned int RelID;
-typedef unsigned int RowID;
-typedef unsigned int ColID;
-
-enum storageMethod {
-    row_store, col_store
-};
-
+class bufferPoolManager;
 
 class physicalPage {
 private:

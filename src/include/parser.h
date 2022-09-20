@@ -5,34 +5,8 @@
 #ifndef TOYDB_PARSER_H
 #define TOYDB_PARSER_H
 
-#include "../storage/storage.h"
-
-enum command_type {
-    SELECT,
-    INSERT,
-    UPDATE,
-    DELETE,
-    INVALID_COMMAND
-};
-
-enum comparision {
-    equal,
-    lt,
-    ne,
-    gt,
-    ngt,
-    nlt,
-//    like,
-    NO_COMP
-};
-
-enum aggr {
-    MIN, MAX, COUNT, AVG, SUM, NO_AGGR
-};
-
-enum expr_type {
-    AGGR, COMP, COL
-};
+#include "../include/storage.h"
+#include "common.h"
 
 class expr {
 public:

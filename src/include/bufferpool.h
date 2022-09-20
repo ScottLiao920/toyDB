@@ -5,16 +5,11 @@
 #ifndef TOYDB_BUFFERPOOL_H
 #define TOYDB_BUFFERPOOL_H
 
-#include <unordered_set>
-#include <unordered_map>
-#include <vector>
+#include "common.h"
+#include "storage.h"
 
-//#include "../storage/storage.h"
 class storageManager;
 
-#define HEAP_SIZE 8192
-#define BUFFER_POOL_SIZE 1
-typedef unsigned int HEAP_PAGE_ID;
 
 class heapPage {
 public:
@@ -31,7 +26,7 @@ public:
 
     bool insert(const char *, size_t);
 
-    virtual void remove(int) = 0;
+//    void remove(int);
 };
 
 class bufferPoolManager {

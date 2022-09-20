@@ -1,7 +1,7 @@
 #include <iostream>
-#include "./src/storage/storage.h"
-#include "./src/bufferpool/bufferpool.h"
-#include "./src/parse/parser.h"
+#include "./src/include/storage.h"
+#include "./src/include/bufferpool.h"
+#include "./src/include/parser.h"
 
 int main() {
     storageManager stmgr;
@@ -26,7 +26,7 @@ int main() {
 
     rel table1;
     table1.set_name_("table1");
-    column col1;
+//    column col1;
 
     return 0;
 }
