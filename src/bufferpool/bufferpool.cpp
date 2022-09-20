@@ -19,7 +19,7 @@ bufferPoolManager::bufferPoolManager(storageManager *stmgr) {
 heapPage *bufferPoolManager::evict() {
     // LRU replacement
     std::time_t oldest = this->pages_.cbegin()->timestamp;
-    unsigned int cnt; //, oldest_idx = 0;
+    unsigned int cnt;
     for (cnt = 0; cnt < this->no_pages_; ++cnt) {
         if (this->pin_cnt_[cnt] == 0) {
             if (this->pages_[cnt].timestamp < oldest) {
@@ -41,6 +41,9 @@ void bufferPoolManager::readFromDisk(PhysicalPageID psy_id) {
             it.second = psy_id;
             this->stmgr_->readPage(psy_id, it.first->content);
             it.first->timestamp = std::time(nullptr);
+            it.first->data_cnt = this->stmgr_->getDataCnt(psy_id);
+            it.first->data_ptr = it.first->content + HEAP_SIZE;
+            it.first->idx_ptr = it.first->content;
             this->pin_cnt_[cnt] += 1;
             this->is_dirty_[cnt] = false;
             cnt += 1;
@@ -49,6 +52,7 @@ void bufferPoolManager::readFromDisk(PhysicalPageID psy_id) {
     }
     heapPage *cleanedPage = evict();
     this->stmgr_->readPage(psy_id, cleanedPage->content);
+    cleanedPage->data_cnt = this->stmgr_->getDataCnt(psy_id);
     this->page_table_[cleanedPage] = psy_id;
     cleanedPage->timestamp = std::time(nullptr);
 }
@@ -90,7 +94,7 @@ void bufferPoolManager::printContent(int idx) {
         char *data_ptr;
         std::memcpy(&data_ptr, tmp, sizeof(char *));
         char *next;
-        std::memcpy(&next, tmp + sizeof(char *), sizeof(char *));
+        next = tmp + sizeof(char *);
         if (next == nullptr) {
             next = this->pages_[idx].data_ptr;
         }

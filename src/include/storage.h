@@ -15,6 +15,7 @@ private:
     size_t page_size_ = PHYSICAL_PAGE_SIZE;
     PhysicalPageID cur_id_{};
     std::string file_path_;
+    size_t data_cnt_ = 0;
 
 public:
     physicalPage() = default;
@@ -24,6 +25,8 @@ public:
     void readPage(char *);
 
     void writePage(const char *);
+
+    size_t getDataCnt() { return this->data_cnt_; }
 };
 
 class storageManager {
@@ -32,6 +35,8 @@ private:
     std::vector<physicalPage> pages_;
 public:
     storageManager() = default;;
+
+    size_t getDataCnt(size_t idx) { return this->pages_[idx].getDataCnt(); };
 
     PhysicalPageID addPage();
 
@@ -60,10 +65,11 @@ class row {
 public:
     row(size_t, RelID);
 
-    void insert(bufferPoolManager, char *);
+    void insert(bufferPoolManager *, char *);
 };
 
 class rel {
+    // CAUTION: rethink about cols_ and rows_. Does one really need a vector of rows in a row store?
     RelID relId_;
     std::string name_;
     std::vector<column> cols_;
@@ -85,7 +91,7 @@ public:
 
     void add_row(const size_t &);
 
-    void update_row(bufferPoolManager, std::vector<row>::size_type, char *);
+    void update_row(bufferPoolManager *, std::vector<row>::size_type, char *);
 
     void add_columns(std::vector<column>);
 

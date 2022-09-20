@@ -4,6 +4,7 @@
 
 #include <cstring>
 #include <utility>
+#include <ctime>
 #include "../include/storage.h"
 
 
@@ -108,10 +109,11 @@ bool rel::set_scheme_(storageMethod method) {
     else { return false; }
 }
 
-void rel::update_row(bufferPoolManager bpmgr, std::vector<row>::size_type idx, char *content) {
+void rel::update_row(bufferPoolManager *bpmgr, std::vector<row>::size_type idx, char *content) {
     if (this->storage_method_ == row_store) {
         if (this->rows_.empty()) {
-
+            this->rows_.emplace_back(8, this->relId_); // CAUTION: is row_width really matter here?
+            idx = 0;
         }
         this->rows_[idx].insert(bpmgr, content);
     }
@@ -122,21 +124,21 @@ void rel::update_row(bufferPoolManager bpmgr, std::vector<row>::size_type idx, c
 
 
 row::row(size_t size, RelID par_table) {
-    this->id_ = std::time();
+    this->id_ = std::time(nullptr);
     this->width_ = size;
     this->par_ = par_table;
 }
 
-void row::insert(bufferPoolManager bpmgr, char *content) {
+void row::insert(bufferPoolManager *bpmgr, char *content) {
     if (this->pages_.empty()) {
-        this->pages_.push_back(bpmgr.stmgr_->addPage());
+        this->pages_.push_back(bpmgr->stmgr_->addPage() - 1);
     }
-    heapPage *cur_frame = bpmgr.findPage(this->pages_[-1]);
+    heapPage *cur_frame = bpmgr->findPage(this->pages_.back());
     if (cur_frame == nullptr) {
         // the last page of this row is not in memory, read it first
-        bpmgr.readFromDisk(this->pages_[-1]);
-        cur_frame = bpmgr.findPage(this->pages_[-1]);
+        bpmgr->readFromDisk(this->pages_.back());
+        cur_frame = bpmgr->findPage(this->pages_.back());
     }
-    bpmgr.insertToFrame(cur_frame, content, this->width_);
-    bpmgr.writeToDisk(this->pages_[-1], cur_frame);
+    bpmgr->insertToFrame(cur_frame, content, this->width_);
+    bpmgr->writeToDisk(this->pages_.back(), cur_frame);
 }
