@@ -13,6 +13,7 @@
 #define FILEPATH "/home/liaoc/Projects/toyDB/data/"
 
 #define INVALID_PHYSICAL_PAGE_ID 0
+#define PHYSICAL_PAGE_SIZE 8192
 typedef unsigned int PhysicalPageID;
 typedef unsigned int RelID;
 typedef unsigned int RowID;
@@ -25,7 +26,7 @@ enum storageMethod {
 
 class physicalPage {
 private:
-    size_t page_size_ = 8192;
+    size_t page_size_ = PHYSICAL_PAGE_SIZE;
     PhysicalPageID cur_id_{};
     std::string file_path_;
 
@@ -72,6 +73,8 @@ class row {
     std::vector<PhysicalPageID> pages;
 public:
     row(std::string, size_t, RelID);
+
+    void insert(storageManager, char *);
 };
 
 class rel {
@@ -79,9 +82,13 @@ class rel {
     std::string name;
     std::vector<column> cols;
     std::vector<row> rows;
-    storageMethod storage_method;
+    storageMethod storage_method = row_store;
 
 public:
+    rel() = default;
+
+    bool set_scheme_(storageMethod);
+
     void set_name_(std::string);
 
     void add_rows(std::vector<row>);
@@ -91,6 +98,8 @@ public:
     void add_row(const row &);
 
     void add_row(const std::string &, const size_t &);
+
+    void update_row(bufferPoolManager, std::vector<row>::size_type, char *);
 
     void add_columns(std::vector<column>);
 

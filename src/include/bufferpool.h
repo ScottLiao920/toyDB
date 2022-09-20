@@ -7,7 +7,10 @@
 
 #include <unordered_set>
 #include <unordered_map>
-#include "../storage/storage.h"
+#include <vector>
+
+//#include "../storage/storage.h"
+class storageManager;
 
 #define HEAP_SIZE 8192
 #define BUFFER_POOL_SIZE 1
@@ -28,7 +31,7 @@ public:
 
     bool insert(const char *, size_t);
 
-    void remove(int);
+    virtual void remove(int) = 0;
 };
 
 class bufferPoolManager {
@@ -43,7 +46,7 @@ private:
 public:
     explicit bufferPoolManager(storageManager *);
 
-    void insertToFrame(int, const char *, size_t);
+    void insertToFrame(int, const char *, size_t); // insert content of size size_t pointed by const char * to frame int
 
     void insertToFrame(heapPage *, const char *, size_t);
 
