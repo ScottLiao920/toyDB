@@ -39,14 +39,15 @@ void parser::parse(const std::string &sql_string) {
     boost::split(target_list, TL_RTE[0], boost::is_any_of(","));
     for (auto &it: target_list) {
         expr *cur_expr = (expr *) malloc(sizeof(expr));
+        std::memset(cur_expr, 0, sizeof(expr));
 
         // check for alias
         if (it.find("AS") != std::string::npos) {
             std::vector<std::string> name_alias;
-            iter_split(name_alias, it, boost::algorithm::first_finder("AS"));
+            boost::iter_split(name_alias, it, boost::algorithm::first_finder("AS"));
             assert(name_alias.size() == 2);
-//            strcpy(reinterpret_cast<char *>(&cur_expr->alias), reinterpret_cast<const char *>(&name_alias[1]));
             cur_expr->alias = name_alias[1];
+            boost::erase_all(cur_expr->alias, " ");
             it = it.substr(0, it.find("AS"));
         }
 
@@ -88,20 +89,21 @@ void parser::parse(const std::string &sql_string) {
         }
         else {
             cur_expr->type = COL;
-            cur_expr->data_srcs.emplace_back(it.c_str());
+            cur_expr->data_srcs.emplace_back(it);
         }
 
         this->stmt_tree_.target_list_.push_back(cur_expr);
     }
     std::vector<std::string> range_table;
-    boost::split(range_table, TL_RTE[1], boost::is_any_of(","));
+    boost::split(this->stmt_tree_.range_table_, TL_RTE[1], boost::is_any_of(","));
     // TODO: lookup a system catalog and map rte name to relid
 
 }
 
 expr::expr() {
     alias.reserve(16);
-    std::memset(&alias, 0, 16);
+    type = COL;
+//    std::memset(&alias, 0, 16);
 }
 
 expr::~expr() {

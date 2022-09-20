@@ -57,8 +57,8 @@ public:
 
 class queryTree {
 public:
-    std::vector<RelID> range_table_;
-    std::vector<RelID>::size_type result_idx_ = 0;
+    std::vector<std::string> range_table_;
+    std::vector<std::string>::size_type result_idx_ = 0;
     std::vector<expr *> target_list_;
     std::vector<expr *> qual_;
     queryTree *left_;
