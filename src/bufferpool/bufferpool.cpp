@@ -10,7 +10,7 @@ bufferPoolManager::bufferPoolManager(storageManager *stmgr) {
     this->stmgr_ = stmgr;
     // TODO: initialize the pages here
     this->pages_ = std::vector<heapPage>(this->no_pages_);
-    for (auto cnt = 0; cnt < this->no_pages_; cnt++) {
+    for (unsigned int cnt = 0; cnt < this->no_pages_; cnt++) {
         this->page_table_.insert(std::pair(&this->pages_[cnt], INVALID_PHYSICAL_PAGE_ID));
     }
     this->is_dirty_.reserve(this->no_pages_);
@@ -20,7 +20,7 @@ bufferPoolManager::bufferPoolManager(storageManager *stmgr) {
 heapPage *bufferPoolManager::evict() {
     // LRU replacement
     std::time_t oldest = this->pages_.cbegin()->timestamp;
-    int cnt, oldest_idx = 0;
+    unsigned int cnt; //, oldest_idx = 0;
     for (cnt = 0; cnt < this->no_pages_; ++cnt) {
         if (this->pin_cnt_[cnt] == 0) {
             if (this->pages_[cnt].timestamp < oldest) {
