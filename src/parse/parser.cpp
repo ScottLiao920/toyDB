@@ -100,7 +100,7 @@ void parser::parse(const std::string &sql_string) {
     boost::iter_split(RTE_qual, TL_RTE[1], boost::algorithm::first_finder("WHERE"));
 
     boost::split(this->stmt_tree_.range_table_, RTE_qual[0], boost::is_any_of(","));
-    // TODO: lookup a system catalog and map rte name to relid
+    // TODO: lookup a system catalog and map rte name_ to relid
     std::vector<std::string> quals;
     boost::iter_split(quals, RTE_qual[1], boost::algorithm::first_finder("AND"));
     for (const auto &it: quals) {

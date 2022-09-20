@@ -52,23 +52,23 @@ public:
 };
 
 class row {
-    std::string name;
-    size_t width;
-    size_t cnt;
-    RelID rel;
-    std::vector<PhysicalPageID> pages;
+    RowID id_;
+    size_t width_;
+    size_t cnt_;
+    RelID par_;
+    std::vector<PhysicalPageID> pages_;
 public:
-    row(std::string, size_t, RelID);
+    row(size_t, RelID);
 
-    void insert(storageManager, char *);
+    void insert(bufferPoolManager, char *);
 };
 
 class rel {
-    RelID id;
-    std::string name;
-    std::vector<column> cols;
-    std::vector<row> rows;
-    storageMethod storage_method = row_store;
+    RelID relId_;
+    std::string name_;
+    std::vector<column> cols_;
+    std::vector<row> rows_;
+    storageMethod storage_method_ = row_store;
 
 public:
     rel() = default;
@@ -79,11 +79,11 @@ public:
 
     void add_rows(std::vector<row>);
 
-    void add_rows(const std::vector<std::string> &, const std::vector<size_t> &);
+    void add_rows(const std::vector<size_t> &);
 
     void add_row(const row &);
 
-    void add_row(const std::string &, const size_t &);
+    void add_row(const size_t &);
 
     void update_row(bufferPoolManager, std::vector<row>::size_type, char *);
 

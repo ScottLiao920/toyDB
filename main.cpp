@@ -22,10 +22,17 @@ int main() {
 //    bpmgr.writeToDisk(1, 0);
     std::cout << dst;
     parser p;
-    p.parse("SELECT SUM(*) as fck, col1 from table1, table2 where table1.id = table2.id and tabel2.col2 < 100");
+    p.parse("SELECT SUM(*) as fck, col1 from table1, table2 where table1.relId_ = table2.relId_ and tabel2.col2 < 100");
 
-    rel table1;
-    table1.set_name_("table1");
+    rel table1, table2;
+    table1.set_name_("A");
+    table2.set_name_("B");
+    table1.add_column("relId_", 8);
+    table2.add_column("relId_", 8);
+    table2.add_column("col2", sizeof(float));
+    char id[8];
+    table1.update_row(bpmgr, 0, id);
+
 //    column col1;
 
     return 0;

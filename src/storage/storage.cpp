@@ -57,51 +57,86 @@ column::column(std::string inp_name, size_t size, RelID par_table) {
     this->name = inp_name;
     this->width = size;
     this->rel = par_table;
+    this->cnt = 0;
 }
 
 void rel::set_name_(std::string inp) {
-    this->name = std::move(inp);
+    this->name_ = std::move(inp);
 }
 
 void rel::add_rows(std::vector<row> inp_rows) {
-    this->rows = inp_rows;
+    this->rows_ = inp_rows;
 }
 
 void rel::add_columns(std::vector<column> inp_cols) {
-    this->cols = inp_cols;
+    this->cols_ = inp_cols;
 }
 
-void rel::add_rows(const std::vector<std::string> &names, const std::vector<size_t> &widths) {
-    for (std::vector<size_t>::size_type i = 0; i < names.size(); ++i) {
-        this->rows.emplace_back(names[i], widths[i], this->id);
+void rel::add_rows(const std::vector<size_t> &widths) {
+    for (std::vector<size_t>::size_type i = 0; i < widths.size(); ++i) {
+        this->rows_.emplace_back(widths[i], this->relId_);
     }
 }
 
 void rel::add_columns(const std::vector<std::string> &names, const std::vector<size_t> &widths) {
     for (std::vector<size_t>::size_type i = 0; i < names.size(); ++i) {
-        this->cols.emplace_back(names[i], widths[i], this->id);
+        this->cols_.emplace_back(names[i], widths[i], this->relId_);
     }
 }
 
-void rel::add_row(const std::string &inp_name, const size_t &inp_size) {
-    this->rows.emplace_back(inp_name, inp_size, this->id);
+void rel::add_row(const size_t &inp_size) {
+    this->rows_.emplace_back(inp_size, this->relId_);
 }
 
 void rel::add_row(const row &inp_row) {
-    this->rows.push_back(inp_row);
+    this->rows_.push_back(inp_row);
 }
 
 void rel::add_column(const std::string &inp_name, const size_t &inp_size) {
-    this->cols.emplace_back(inp_name, inp_size, this->id);
+    this->cols_.emplace_back(inp_name, inp_size, this->relId_);
 }
 
 void rel::add_column(const column &inp_column) {
-    this->cols.push_back(inp_column);
+    this->cols_.push_back(inp_column);
+}
+
+bool rel::set_scheme_(storageMethod method) {
+    if (this->cols_.empty() and this->rows_.empty()) {
+        this->storage_method_ = method;
+        return true;
+    }
+    else { return false; }
+}
+
+void rel::update_row(bufferPoolManager bpmgr, std::vector<row>::size_type idx, char *content) {
+    if (this->storage_method_ == row_store) {
+        if (this->rows_.empty()) {
+
+        }
+        this->rows_[idx].insert(bpmgr, content);
+    }
+    else {
+        return;
+    }
 }
 
 
-row::row(std::string inp_name, size_t size, RelID par_table) {
-    this->name = inp_name;
-    this->width = size;
-    this->rel = par_table;
+row::row(size_t size, RelID par_table) {
+    this->id_ = std::time();
+    this->width_ = size;
+    this->par_ = par_table;
+}
+
+void row::insert(bufferPoolManager bpmgr, char *content) {
+    if (this->pages_.empty()) {
+        this->pages_.push_back(bpmgr.stmgr_->addPage());
+    }
+    heapPage *cur_frame = bpmgr.findPage(this->pages_[-1]);
+    if (cur_frame == nullptr) {
+        // the last page of this row is not in memory, read it first
+        bpmgr.readFromDisk(this->pages_[-1]);
+        cur_frame = bpmgr.findPage(this->pages_[-1]);
+    }
+    bpmgr.insertToFrame(cur_frame, content, this->width_);
+    bpmgr.writeToDisk(this->pages_[-1], cur_frame);
 }

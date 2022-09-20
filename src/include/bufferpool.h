@@ -35,11 +35,12 @@ private:
     std::vector<heapPage> pages_;
     std::vector<short> pin_cnt_;
     std::vector<bool> is_dirty_;
-    storageManager *stmgr_;
     size_t no_pages_ = BUFFER_POOL_SIZE;
 
 public:
     explicit bufferPoolManager(storageManager *);
+
+    heapPage* findPage(PhysicalPageID);
 
     void insertToFrame(int, const char *, size_t); // insert content of size size_t pointed by const char * to frame int
 
@@ -49,11 +50,15 @@ public:
 
     void writeToDisk(PhysicalPageID, int);
 
+    void writeToDisk(PhysicalPageID, heapPage *);
+
     void printContent(int idx);
 
     heapPage *evict();
 
     ~bufferPoolManager();
+
+    storageManager *stmgr_;
 };
 
 

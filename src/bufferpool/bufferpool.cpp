@@ -8,7 +8,6 @@
 
 bufferPoolManager::bufferPoolManager(storageManager *stmgr) {
     this->stmgr_ = stmgr;
-    // TODO: initialize the pages here
     this->pages_ = std::vector<heapPage>(this->no_pages_);
     for (unsigned int cnt = 0; cnt < this->no_pages_; cnt++) {
         this->page_table_.insert(std::pair(&this->pages_[cnt], INVALID_PHYSICAL_PAGE_ID));
@@ -111,6 +110,19 @@ bufferPoolManager::~bufferPoolManager() {
             this->stmgr_->writePage(this->page_table_[&this->pages_[cnt]], this->pages_[cnt].content);
         }
     }
+}
+
+heapPage *bufferPoolManager::findPage(PhysicalPageID idx) {
+    for (auto it: this->page_table_) {
+        if (it.second == idx) {
+            return it.first;
+        }
+    }
+    return nullptr;
+}
+
+void bufferPoolManager::writeToDisk(PhysicalPageID psy_id, heapPage *page) {
+    this->stmgr_->writePage(psy_id, page->content);
 }
 
 
