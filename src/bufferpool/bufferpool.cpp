@@ -91,10 +91,10 @@ void bufferPoolManager::printContent(int idx) {
     int cnt = 0;
 //    char *end = this->pages_[idx].content + sizeof(this->pages_[idx].content);
     while (tmp != this->pages_[idx].idx_ptr) {
-        char *data_ptr;
+        char *data_ptr = nullptr;
         std::memcpy(&data_ptr, tmp, sizeof(char *));
-        char *next;
-        next = tmp + sizeof(char *);
+        char *next = nullptr;
+        std::memcpy(&next, tmp + sizeof(char *), sizeof(char *));
         if (next == nullptr) {
             next = this->pages_[idx].data_ptr;
         }

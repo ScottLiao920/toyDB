@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cstring>
 #include "./src/include/storage.h"
 #include "./src/include/bufferpool.h"
 #include "./src/include/parser.h"
@@ -31,11 +32,13 @@ int main() {
     table2.add_column("relId_", 8);
     table2.add_column("col2", sizeof(float));
     char id[8];
+    std::memset(id, 0, 8);
+    id[0] = '1';
+    table1.add_row(sizeof(int));
     table1.update_row(&bpmgr, 0, id);
     for (auto i = 0; i < BUFFER_POOL_SIZE; i++) {
         bpmgr.printContent(i);
     }
-//    column col1;
 
     return 0;
 }

@@ -112,12 +112,14 @@ bool rel::set_scheme_(storageMethod method) {
 void rel::update_row(bufferPoolManager *bpmgr, std::vector<row>::size_type idx, char *content) {
     if (this->storage_method_ == row_store) {
         if (this->rows_.empty()) {
-            this->rows_.emplace_back(8, this->relId_); // CAUTION: is row_width really matter here?
-            idx = 0;
+            std::cout << "No row found in " << this->name_ << std::endl;
         }
-        this->rows_[idx].insert(bpmgr, content);
+        else {
+            this->rows_[idx].insert(bpmgr, content);
+        }
     }
     else {
+        // What to expect to insert a row in column-store?
         return;
     }
 }
