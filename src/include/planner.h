@@ -5,10 +5,8 @@
 #ifndef TOYDB_PLANNER_H
 #define TOYDB_PLANNER_H
 
-
 class planner {
 
 };
-
 
 #endif //TOYDB_PLANNER_H
