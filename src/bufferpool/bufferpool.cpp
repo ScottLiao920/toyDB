@@ -4,7 +4,7 @@
 
 #include <cstring>
 #include <chrono>
-#include "../include/bufferpool.h"
+#include "bufferpool.h"
 
 bufferPoolManager::bufferPoolManager(storageManager *stmgr) {
     this->stmgr_ = stmgr;

@@ -6,4 +6,5 @@ set(CMAKE_CXX_FLAGS "-Wall -Wextra")
 set(CMAKE_CXX_FLAGS_DEBUG "-g")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
+include_directories(src/include)
 add_executable(toyDB main.cpp src/storage/storage.cpp src/include/storage.h src/bufferpool/bufferpool.cpp src/parse/parser.cpp src/include/parser.h src/planner/planner.cpp src/include/planner.h src/include/common.h)
