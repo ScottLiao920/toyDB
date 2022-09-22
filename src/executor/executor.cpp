@@ -39,21 +39,26 @@ void seqScanExecutor::Init(rel *tab, bufferPoolManager *manager, comparison_expr
 }
 std::vector<tuple> seqScanExecutor::Next() {
   std::vector<tuple> out;
+  size_t len = this->table_->get_tuple_size();
   if (this->mode_ == volcano) {
 	// emit one at a time
-	out.reserve(1);
-	std::memcpy(out[0].content_, this->mem_ptr_, this->table_->get_tuple_size());
-	this->mem_ptr_ += this->table_->get_tuple_size();
+	char buf[len];
+	std::memcpy(buf, this->mem_ptr_, len);
+	tuple tmp(buf, len);
+	out.push_back(tmp);
+	this->mem_ptr_ += len;
   } else {
 	// emit a batch at a time
-	out.reserve(BATCH_SIZE);
 	for (auto &it : out) {
-	  std::memcpy(it.content_, this->mem_ptr_, this->table_->get_tuple_size());
-	  this->mem_ptr_ += this->table_->get_tuple_size();
+	  char buf[len];
+	  std::memcpy(buf, this->mem_ptr_, len);
+	  tuple tmp(buf, len);
+	  out.push_back(tmp);
+	  this->mem_ptr_ += len;
 	}
   }
   return out;
 }
 void seqScanExecutor::End() {
-  free(this->memory_context_);
+//  free(this->memory_context_);
 }

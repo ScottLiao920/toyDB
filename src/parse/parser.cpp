@@ -141,5 +141,5 @@ expr::expr() {
 }
 
 expr::~expr() {
-  free(this);
+//  free(this);
 }

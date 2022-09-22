@@ -13,9 +13,10 @@ class bufferPoolManager;
 class physicalPage {
  private:
   size_t page_size_ = PHYSICAL_PAGE_SIZE;
-  PhysicalPageID cur_id_{};
+  PhysicalPageID cur_id_ = 0;
   std::string file_path_;
   size_t data_cnt_ = 0;
+  size_t free_space_ = PHYSICAL_PAGE_SIZE;
 
  public:
   physicalPage() = default;
@@ -27,6 +28,8 @@ class physicalPage {
   void writePage(const char *);
 
   size_t getDataCnt() { return this->data_cnt_; }
+
+  size_t getFreeSpace() { return this->free_space_; }
 };
 
 class storageManager {
@@ -51,6 +54,10 @@ class tuple {
   size_t size_;
   RelID table_;
   RowID row_;
+  tuple(char *buf, size_t len) {
+	std::memcpy(this->content_, buf, len);
+	this->size_ = len;
+  };
 };
 
 class column {
@@ -74,6 +81,7 @@ class row {
   size_t getSize() { return this->width_; }
   void insert(bufferPoolManager *, char *);
   std::vector<PhysicalPageID> pages_;
+  void setPages(std::vector<PhysicalPageID> p) { this->pages_ = p; };
 };
 
 class rel {
@@ -81,10 +89,10 @@ class rel {
   RelID relId_;
   std::string name_;
   std::vector<column> cols_;
-  std::vector<row> rows_;
   storageMethod storage_method_ = row_store;
-
  public:
+
+  std::vector<row> rows_;
   rel() = default;
 
   bool set_scheme_(storageMethod);
