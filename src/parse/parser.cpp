@@ -9,8 +9,8 @@
 
 queryTree::queryTree() {
   this->command_ = INVALID_COMMAND;
-  this->left_ = (queryTree *)std::malloc(sizeof(queryTree));
-  this->right_ = (queryTree *)std::malloc(sizeof(queryTree));
+//  this->left_ = (queryTree *)std::malloc(sizeof(queryTree));
+//  this->right_ = (queryTree *)std::malloc(sizeof(queryTree));
 }
 
 void parser::parse(const std::string &sql_string) {
@@ -34,7 +34,7 @@ void parser::parse(const std::string &sql_string) {
   std::vector<std::string> target_list;
   boost::split(target_list, TL_RTE[0], boost::is_any_of(","));
   for (auto &it : target_list) {
-	expr *cur_expr = (expr *)malloc(sizeof(expr));
+	expr *cur_expr = new expr;
 	std::memset(cur_expr, 0, sizeof(expr));
 
 	// check for alias
@@ -96,13 +96,20 @@ void parser::parse(const std::string &sql_string) {
   boost::iter_split(quals, RTE_qual[1], boost::algorithm::first_finder("AND"));
   for (const auto &it : quals) {
 	// check qualifications in WHERE clause
-	expr *cur_qual = (expr *)std::malloc(sizeof(expr));
+	expr *cur_qual = new expr;
 	std::smatch op;
 	std::regex op_regex("[=<>!]");
 	std::regex_search(it, op, op_regex);
 	if (not op.empty()) {
 	  cur_qual->type = COMP;
 	  std::string all_op = op.format("$&");
+	  std::string first_operand, second_operand;
+	  first_operand = op.format("$`");
+	  second_operand = op.format("$'");
+	  std::remove(first_operand.begin(), first_operand.end(), ' ');
+	  std::remove(second_operand.begin(), second_operand.end(), ' ');
+	  cur_qual->data_srcs.push_back(first_operand);
+	  cur_qual->data_srcs.push_back(second_operand);
 	  // check comparison type and assign it accordingly. Maybe have a dict for it?
 	  if (all_op == "<=") {
 		((comparison_expr *)cur_qual)->comparision_type = ngt;
@@ -122,13 +129,6 @@ void parser::parse(const std::string &sql_string) {
 	} else {
 	  std::cout << "Parse Error: Qualification List Init Failed." << std::endl;
 	}
-	std::string first_operand, second_operand;
-	first_operand = op.format("$`");
-	second_operand = op.format("$'");
-	std::remove(first_operand.begin(), first_operand.end(), ' ');
-	std::remove(second_operand.begin(), second_operand.end(), ' ');
-	cur_qual->data_srcs.push_back(first_operand);
-	cur_qual->data_srcs.push_back(second_operand);
 	this->stmt_tree_.qual_.push_back(cur_qual);
   }
 }

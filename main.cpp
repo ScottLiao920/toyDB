@@ -32,18 +32,17 @@ int main() {
   table1.add_column("relId_", 8);
   table2.add_column("relId_", 8);
   table2.add_column("col2", sizeof(float));
-  char id[8];
-  std::memset(id, 1, 8);
+  char id[8] = "AAAAAAA";
 //  id[0] = '1';
-  for (unsigned int i = 0; i < 100; i++) {
-	table1.add_row(sizeof(int));
+  for (unsigned int i = 0; i < 100; ++i) {
+	table1.add_row(8);
 	table1.rows_.back().pages_.push_back(1);
 	table1.update_row(&bpmgr, i, id);
   }
   comparison_expr qual;
   seqScanExecutor seq_scan_executor;
   seq_scan_executor.Init(&table1, &bpmgr, qual);
-  for (unsigned int i = 0; i < 100; i++) {
+  for (unsigned int i = 0; i < 100; ++i) {
 	std::vector<tuple> tup = seq_scan_executor.Next();
 	std::cout << tup[0].content_<<std::endl;
   }

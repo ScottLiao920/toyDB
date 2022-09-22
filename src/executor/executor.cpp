@@ -43,13 +43,20 @@ std::vector<tuple> seqScanExecutor::Next() {
   if (this->mode_ == volcano) {
 	// emit one at a time
 	char buf[len];
-	std::memcpy(buf, this->mem_ptr_, len);
+	char *data_ptr = (char *)malloc(sizeof(char *));
+	this->mem_ptr_ += sizeof(char *);
+	std::memcpy(&data_ptr, this->mem_ptr_, sizeof(char *));
+	if (data_ptr == nullptr) {
+	  //last tuple
+	  std::memcpy(&data_ptr, this->mem_ptr_ - sizeof(char *), sizeof(char *));
+	  data_ptr -= len;
+	}
+	std::memcpy(buf, data_ptr, len);
 	tuple tmp(buf, len);
 	out.push_back(tmp);
-	this->mem_ptr_ += len;
   } else {
 	// emit a batch at a time
-	for (auto &it : out) {
+	for (auto i = 0; i < BATCH_SIZE; i++) {
 	  char buf[len];
 	  std::memcpy(buf, this->mem_ptr_, len);
 	  tuple tmp(buf, len);
