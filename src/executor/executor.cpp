@@ -55,6 +55,5 @@ std::vector<tuple> seqScanExecutor::Next() {
   return out;
 }
 void seqScanExecutor::End() {
-  scanExecutor::End();
   free(this->memory_context_);
 }

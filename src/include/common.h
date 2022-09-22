@@ -14,7 +14,7 @@
 #include <unistd.h>
 #include <vector>
 
-#define FILEPATH "/home/liaoc/Projects/toyDB/data/"
+#define FILEPATH "/mnt/c/users/scorp/ClionProjects/toyDB/data/"
 #define INVALID_PHYSICAL_PAGE_ID 0
 #define PHYSICAL_PAGE_SIZE 8192
 #define HEAP_SIZE 8192

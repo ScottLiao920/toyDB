@@ -125,15 +125,18 @@ void parser::parse(const std::string &sql_string) {
 	std::string first_operand, second_operand;
 	first_operand = op.format("$`");
 	second_operand = op.format("$'");
-	cur_qual->data_srcs.emplace_back(first_operand);
-	cur_qual->data_srcs.emplace_back(second_operand);
-	this->stmt_tree_.qual_.emplace_back(cur_qual);
+	std::remove(first_operand.begin(), first_operand.end(), ' ');
+	std::remove(second_operand.begin(), second_operand.end(), ' ');
+	cur_qual->data_srcs.push_back(first_operand);
+	cur_qual->data_srcs.push_back(second_operand);
+	this->stmt_tree_.qual_.push_back(cur_qual);
   }
 }
 
 expr::expr() {
   alias.reserve(16);
   type = COL;
+  data_srcs.reserve(2);
 //    std::memset(&alias, 0, 16);
 }
 

@@ -137,7 +137,7 @@ heapPage::heapPage() {
 }
 
 heapPage::~heapPage() {
-//    std::free(&this->content);
+    std::free(this->content);
 }
 
 bool heapPage::insert(const char *buf, size_t len) {

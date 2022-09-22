@@ -59,7 +59,7 @@ class column {
   size_t cnt_;
   RelID rel_;
  public:
-  size_t getSize() { return this->width; }
+  size_t getSize() { return this->width_; }
   column(std::string, size_t, RelID);
   std::vector<PhysicalPageID> pages_;
 };

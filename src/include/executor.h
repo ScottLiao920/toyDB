@@ -43,7 +43,7 @@ class seqScanExecutor : protected scanExecutor {
  protected:
   using executor::memory_context_;
  public:
-  void Init() override;
+  void Init() override {};
   void Init(rel *, bufferPoolManager *, comparison_expr);
   std::vector<tuple> Next() override;
   void End() override;
