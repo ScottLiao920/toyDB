@@ -15,52 +15,36 @@ class executor {
   execution_mode mode_ = volcano;
   char memory_context_[EXEC_MEM] = "";
  public:
-  virtual void Init();
-  virtual std::vector<tuple> Next();
-  virtual void End();
+  virtual void Init() = 0;
+  virtual std::vector<tuple> Next() = 0;
+  virtual void End() = 0;
 };
 
-class createExecutor : executor {
-  // This executor creates a table
-};
-
-class dropExecutor : executor {
-  // This executor drops a table from schema;
-};
-
-class insertExecutor : executor {
-  // This executor insert a row/col into a table
-};
-
-class updateExecutor : executor {
-  // This executor update tuple(s) in a table
-};
-
-class indexExecutor : executor {
-  // This executor build an index on a column;
-};
-
-class sortExecutor : executor {
-  // This executor sort a column inside a table;
-};
-
-class scanExecutor : executor {
+class scanExecutor : protected executor {
   // abstract class for scan executors
-  RelID table_;
+ protected:
+  rel *table_;
   comparison_expr qual_;
-  storageManager *stmgr_;
+  bufferPoolManager *bpmgr_;
  public:
   void Init() override = 0;
   void SetMode(execution_mode);
-  void SetTable(RelID);
-  void SetStorageManager(storageManager *);
+  void SetTable(rel *);
+  void SetBufferPoolManager(bufferPoolManager *);
   std::vector<tuple> Next() override = 0;
   void End() override = 0;
 };
 
-class seqScanExecutor : scanExecutor {
+class seqScanExecutor : protected scanExecutor {
+ private:
+  unsigned int cnt_;
+  char *mem_ptr_ = memory_context_;
+  std::vector<PhysicalPageID> pages_;
+ protected:
+  using executor::memory_context_;
  public:
   void Init() override;
+  void Init(rel *, bufferPoolManager *, comparison_expr);
   std::vector<tuple> Next() override;
   void End() override;
 };
@@ -101,6 +85,37 @@ class hashJoinExecutor : joinExecutor {
 
 class mergeJoinExecutor : joinExecutor {
 
+};
+
+class createExecutor : executor {
+  // This executor creates a table
+ private:
+  storageManager *storage_manager_;
+
+ public:
+  void Init() override;
+  void setStorageManager(storageManager *);
+
+};
+
+class dropExecutor : executor {
+  // This executor drops a table from schema;
+};
+
+class insertExecutor : executor {
+  // This executor insert a row/col into a table
+};
+
+class updateExecutor : executor {
+  // This executor update tuple(s) in a table
+};
+
+class indexExecutor : executor {
+  // This executor build an index on a column;
+};
+
+class sortExecutor : executor {
+  // This executor sort a column inside a table;
 };
 
 #endif //TOYDB_SRC_INCLUDE_EXECUTOR_H_

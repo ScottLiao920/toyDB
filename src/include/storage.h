@@ -45,15 +45,23 @@ class storageManager {
   void readPage(PhysicalPageID, void *);
 };
 
-class column {
-  std::string name;
-  size_t width;
-  size_t cnt;
-  RelID rel;
-  std::vector<PhysicalPageID> pages;
+class tuple {
  public:
+  char *content_;
+  size_t size_;
+  RelID table_;
+  RowID row_;
+};
+
+class column {
+  std::string name_;
+  size_t width_;
+  size_t cnt_;
+  RelID rel_;
+ public:
+  size_t getSize() { return this->width; }
   column(std::string, size_t, RelID);
-//    std::vector<>
+  std::vector<PhysicalPageID> pages_;
 };
 
 class row {
@@ -61,11 +69,11 @@ class row {
   size_t width_;
   size_t cnt_;
   RelID par_;
-  std::vector<PhysicalPageID> pages_;
  public:
   row(size_t, RelID);
-
+  size_t getSize() { return this->width_; }
   void insert(bufferPoolManager *, char *);
+  std::vector<PhysicalPageID> pages_;
 };
 
 class rel {
@@ -101,6 +109,9 @@ class rel {
 
   void add_column(const std::string &, const size_t &);
 
+  std::vector<PhysicalPageID> get_location();
+
+  size_t get_tuple_size();
 };
 
 #endif //TOYDB_STORAGE_H

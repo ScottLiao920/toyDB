@@ -55,10 +55,10 @@ void storageManager::readPage(PhysicalPageID page_id, void *dst) {
 }
 
 column::column(std::string inp_name, size_t size, RelID par_table) {
-  this->name = inp_name;
-  this->width = size;
-  this->rel = par_table;
-  this->cnt = 0;
+  this->name_ = inp_name;
+  this->width_ = size;
+  this->rel_ = par_table;
+  this->cnt_ = 0;
 }
 
 void rel::set_name_(std::string inp) {
@@ -118,6 +118,30 @@ void rel::update_row(bufferPoolManager *bpmgr, std::vector<row>::size_type idx, 
   } else {
 	// What to expect to insert a row in column-store?
 	return;
+  }
+}
+std::vector<PhysicalPageID> rel::get_location() {
+  std::vector<PhysicalPageID> result;
+  if (this->storage_method_ == row_store) {
+	for (const auto &it : this->rows_) {
+	  result.insert(result.end(), it.pages_.begin(), it.pages_.end());
+	}
+  } else {
+	for (const auto &it : this->cols_) {
+	  result.insert(result.end(), it.pages_.begin(), it.pages_.end());
+	}
+  }
+  return result;
+}
+size_t rel::get_tuple_size() {
+  if (this->storage_method_ == row_store) {
+	return this->rows_[0].getSize();
+  } else {
+	size_t out = 0;
+	for (auto &it : this->cols_) {
+	  out += it.getSize();
+	}
+	return out;
   }
 }
 

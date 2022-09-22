@@ -20,6 +20,7 @@
 #define HEAP_SIZE 8192
 #define BUFFER_POOL_SIZE 1
 #define EXEC_MEM 8192
+#define BATCH_SIZE 64
 
 typedef unsigned int HEAP_PAGE_ID;
 typedef unsigned int PhysicalPageID;
