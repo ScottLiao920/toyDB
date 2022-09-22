@@ -5,110 +5,121 @@
 #ifndef TOYDB_STORAGE_H
 #define TOYDB_STORAGE_H
 
-#include <iostream>
-#include <fstream>
-#include <unistd.h>
-#include <vector>
+#include "common.h"
+#include "bufferpool.h"
 
-#define FILEPATH "/home/liaoc/Projects/toyDB/data/"
-
-#define INVALID_PHYSICAL_PAGE_ID 0
-#define PHYSICAL_PAGE_SIZE 8192
-typedef unsigned int PhysicalPageID;
-typedef unsigned int RelID;
-typedef unsigned int RowID;
-typedef unsigned int ColID;
-
-enum storageMethod {
-    row_store, col_store
-};
-
+class bufferPoolManager;
 
 class physicalPage {
-private:
-    size_t page_size_ = PHYSICAL_PAGE_SIZE;
-    PhysicalPageID cur_id_{};
-    std::string file_path_;
+ private:
+  size_t page_size_ = PHYSICAL_PAGE_SIZE;
+  PhysicalPageID cur_id_ = 0;
+  std::string file_path_;
+  size_t data_cnt_ = 0;
+  size_t free_space_ = PHYSICAL_PAGE_SIZE;
 
-public:
-    physicalPage() = default;
+ public:
+  physicalPage() = default;
 
-    explicit physicalPage(PhysicalPageID);
+  explicit physicalPage(PhysicalPageID);
 
-    void readPage(char *);
+  void readPage(char *);
 
-    void writePage(const char *);
+  void writePage(const char *);
+
+  size_t getDataCnt() { return this->data_cnt_; }
+
+  size_t getFreeSpace() { return this->free_space_; }
 };
 
 class storageManager {
-private:
-    PhysicalPageID cur_page_id_ = 0;
-    std::vector<physicalPage> pages_;
-public:
-    storageManager() = default;;
+ private:
+  PhysicalPageID cur_page_id_ = 0;
+  std::vector<physicalPage> pages_;
+ public:
+  storageManager() = default;;
 
-    PhysicalPageID addPage();
+  size_t getDataCnt(size_t idx) { return this->pages_[idx].getDataCnt(); };
 
-    void writePage(PhysicalPageID, void *);
+  PhysicalPageID addPage();
 
-    void readPage(PhysicalPageID, void *);
+  void writePage(PhysicalPageID, void *);
+
+  void readPage(PhysicalPageID, void *);
+};
+
+class tuple {
+ public:
+  char *content_;
+  size_t size_;
+  RelID table_;
+  RowID row_;
+  tuple(char *buf, size_t len) {
+	std::memcpy(this->content_, buf, len);
+	this->size_ = len;
+  };
 };
 
 class column {
-    std::string name;
-    size_t width;
-    size_t cnt;
-    RelID rel;
-    std::vector<PhysicalPageID> pages;
-public:
-    column(std::string, size_t, RelID);
-//    std::vector<>
+  std::string name_;
+  size_t width_;
+  size_t cnt_;
+  RelID rel_;
+ public:
+  size_t getSize() { return this->width_; }
+  column(std::string, size_t, RelID);
+  std::vector<PhysicalPageID> pages_;
 };
 
 class row {
-    std::string name;
-    size_t width;
-    size_t cnt;
-    RelID rel;
-    std::vector<PhysicalPageID> pages;
-public:
-    row(std::string, size_t, RelID);
-
-    void insert(storageManager, char *);
+  RowID id_;
+  size_t width_;
+  size_t cnt_;
+  RelID par_;
+ public:
+  row(size_t, RelID);
+  size_t getSize() { return this->width_; }
+  void insert(bufferPoolManager *, char *);
+  std::vector<PhysicalPageID> pages_;
+  void setPages(std::vector<PhysicalPageID> p) { this->pages_ = p; };
 };
 
 class rel {
-    RelID id;
-    std::string name;
-    std::vector<column> cols;
-    std::vector<row> rows;
-    storageMethod storage_method = row_store;
+  // CAUTION: rethink about cols_ and rows_. Does one really need a vector of rows in a row store?
+  RelID relId_;
+  std::string name_;
+  std::vector<column> cols_;
+  storageMethod storage_method_ = row_store;
+ public:
 
-public:
-    rel() = default;
+  std::vector<row> rows_;
+  rel() = default;
 
-    bool set_scheme_(storageMethod);
+  bool set_scheme_(storageMethod);
 
-    void set_name_(std::string);
+  void set_name_(std::string);
 
-    void add_rows(std::vector<row>);
+  void add_rows(std::vector<row>);
 
-    void add_rows(const std::vector<std::string> &, const std::vector<size_t> &);
+  void add_rows(const std::vector<size_t> &);
 
-    void add_row(const row &);
+  void add_row(const row &);
 
-    void add_row(const std::string &, const size_t &);
+  void add_row(const size_t &);
 
-    void update_row(bufferPoolManager, std::vector<row>::size_type, char *);
+  void update_row(bufferPoolManager *, std::vector<row>::size_type, char *);
 
-    void add_columns(std::vector<column>);
+  void add_columns(std::vector<column>);
 
-    void add_columns(const std::vector<std::string> &, const std::vector<size_t> &);
+  void add_columns(const std::vector<std::string> &, const std::vector<size_t> &);
 
-    void add_column(const column &);
+  void add_column(const column &);
 
-    void add_column(const std::string &, const size_t &);
+  void add_column(const std::string &, const size_t &);
 
+  std::vector<PhysicalPageID> get_location();
+
+  size_t get_tuple_size();
 };
 
 #endif //TOYDB_STORAGE_H
