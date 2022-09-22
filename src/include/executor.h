@@ -20,6 +20,22 @@ class executor {
   virtual void End();
 };
 
+class createExecutor : executor {
+  // This executor creates a table
+};
+
+class dropExecutor : executor {
+  // This executor drops a table from schema;
+};
+
+class insertExecutor : executor {
+  // This executor insert a row/col into a table
+};
+
+class updateExecutor : executor {
+  // This executor update tuple(s) in a table
+};
+
 class indexExecutor : executor {
   // This executor build an index on a column;
 };
