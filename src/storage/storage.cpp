@@ -24,6 +24,7 @@ void physicalPage::readPage(char *dst) {
   cur_page_file.open(this->file_path_);
   cur_page_file.read(buffer, this->page_size_);
   memcpy(dst, buffer, this->page_size_);
+  free(buffer);
 }
 
 void physicalPage::writePage(const char *content) {

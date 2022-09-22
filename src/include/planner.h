@@ -5,8 +5,11 @@
 #ifndef TOYDB_PLANNER_H
 #define TOYDB_PLANNER_H
 
-class planner {
+#include "common.h"
 
+class planner {
+ private:
+ public:
 };
 
 #endif //TOYDB_PLANNER_H

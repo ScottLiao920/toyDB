@@ -87,7 +87,7 @@ void bufferPoolManager::insertToFrame(heapPage *cur_page, const char *buf, size_
 void bufferPoolManager::printContent(int idx) {
   char *tmp = this->pages_[idx].content;
   int cnt = 0;
-//    char *end = this->pages_[idx].content + sizeof(this->pages_[idx].content);
+//    char *End = this->pages_[idx].content + sizeof(this->pages_[idx].content);
   while (tmp != this->pages_[idx].idx_ptr) {
 	char *data_ptr = nullptr;
 	std::memcpy(&data_ptr, tmp, sizeof(char *));

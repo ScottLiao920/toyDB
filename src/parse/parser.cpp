@@ -114,6 +114,8 @@ void parser::parse(const std::string &sql_string) {
 		((comparison_expr *)cur_qual)->comparision_type = nlt;
 	  } else if (all_op == "=") {
 		((comparison_expr *)cur_qual)->comparision_type = equal;
+	  } else if (all_op == "!=") {
+		((comparison_expr *)cur_qual)->comparision_type = ne;
 	  } else {
 		((comparison_expr *)cur_qual)->comparision_type = NO_COMP;
 	  }

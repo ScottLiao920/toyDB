@@ -10,6 +10,13 @@
 
 class storageManager;
 
+class tuple {
+ public:
+  char *content_;
+  RelID table_;
+  RowID row_;
+};
+
 class heapPage {
  public:
   char content[HEAP_SIZE]{};
