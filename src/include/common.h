@@ -8,6 +8,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <vector>
+#include <cstring>
 #include <iostream>
 #include <fstream>
 #include <unistd.h>
@@ -18,6 +19,7 @@
 #define PHYSICAL_PAGE_SIZE 8192
 #define HEAP_SIZE 8192
 #define BUFFER_POOL_SIZE 1
+#define EXEC_MEM 8192
 
 typedef unsigned int HEAP_PAGE_ID;
 typedef unsigned int PhysicalPageID;
@@ -54,6 +56,10 @@ enum aggr {
 
 enum expr_type {
   AGGR, COMP, COL
+};
+
+enum execution_mode {
+  volcano, vector
 };
 
 #endif //TOYDB_COMMON_H
