@@ -88,37 +88,25 @@ class rel {
   // CAUTION: rethink about cols_ and rows_. Does one really need a vector of rows in a row store?
   RelID relId_;
   std::string name_;
-  std::vector<column> cols_;
   storageMethod storage_method_ = row_store;
  public:
-
+  std::vector<column> cols_;
   std::vector<row> rows_;
+
   rel() = default;
-
+  storageMethod getStorageMethod() { return this->storage_method_; };
   bool set_scheme_(storageMethod);
-
   void set_name_(std::string);
-
   void add_rows(std::vector<row>);
-
   void add_rows(const std::vector<size_t> &);
-
   void add_row(const row &);
-
   void add_row(const size_t &);
-
   void update_row(bufferPoolManager *, std::vector<row>::size_type, char *);
-
   void add_columns(std::vector<column>);
-
   void add_columns(const std::vector<std::string> &, const std::vector<size_t> &);
-
   void add_column(const column &);
-
   void add_column(const std::string &, const size_t &);
-
   std::vector<PhysicalPageID> get_location();
-
   size_t get_tuple_size();
 };
 

@@ -37,8 +37,7 @@ void physicalPage::writePage(const char *content) {
 PhysicalPageID storageManager::addPage() {
   physicalPage page(this->cur_page_id_);
   this->pages_.push_back(page);
-  this->cur_page_id_ += 1;
-  return this->cur_page_id_;
+  return this->cur_page_id_++; // increment the page id, but return the page just added
 }
 
 void storageManager::writePage(PhysicalPageID page_id, void *content) {

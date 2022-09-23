@@ -112,6 +112,12 @@ class updateExecutor : executor {
 
 class indexExecutor : executor {
   // This executor build an index on a column;
+ private:
+  index_type type_;
+  storageManager *stmgr_;
+ public:
+  void Init() override;
+  void Init(storageManager *, rel *, size_t, index_type);
 };
 
 class sortExecutor : executor {

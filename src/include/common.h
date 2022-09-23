@@ -24,6 +24,7 @@
 
 typedef unsigned int HEAP_PAGE_ID;
 typedef unsigned int PhysicalPageID;
+#define INVALID_PHYSICAL_PAGE_ID 0xFFFFFFFF
 typedef unsigned int RelID;
 typedef unsigned int RowID;
 typedef unsigned int ColID;
@@ -61,6 +62,10 @@ enum expr_type {
 
 enum execution_mode {
   volcano, vector
+};
+
+enum index_type {
+  btree, hash
 };
 
 #endif //TOYDB_COMMON_H

@@ -2,6 +2,7 @@
 // Created by scorp on 9/22/2022.
 //
 #include "executor.h"
+#include "btree.h"
 
 void executor::Init() {
   std::memset(this->memory_context_, 0, EXEC_MEM);
@@ -68,4 +69,36 @@ std::vector<tuple> seqScanExecutor::Next() {
 }
 void seqScanExecutor::End() {
 //  free(this->memory_context_);
+}
+void indexExecutor::Init() {
+  executor::Init();
+}
+void indexExecutor::Init(storageManager *stmgr, rel *tab, size_t idx, index_type type = btree) {
+  PhysicalPageID idx_page = stmgr->addPage();
+  bTree<int> tree(10); // need a member in row/col to tell the datatype
+  if (tab->getStorageMethod() == row_store) {
+	PhysicalPageID prev = INVALID_PHYSICAL_PAGE_ID;
+	char buf[PHYSICAL_PAGE_SIZE];
+	char *ptr = buf;
+	int cnt = 0;
+	for (const auto &it : tab->rows_) {
+	  if (it.pages_.size() == 1) {
+		// every row is only spanned over 1 page, makes life much easier
+		if (it.pages_[0] != prev) {
+		  // write previous page in buffer back, read new page from disk
+		  if (prev != INVALID_PHYSICAL_PAGE_ID) {
+			stmgr->writePage(prev, buf);
+		  }
+		  stmgr->readPage(it.pages_[0], buf);
+		  ptr = buf;
+		  cnt = 0;
+		  prev = it.pages_[0];
+		}
+		int *val = nullptr;
+		std::memcpy(val, ptr, sizeof(int)); // not true. Need to be the idx-th column
+		tree.insert(*val, std::tuple(prev, cnt));
+	  }
+	}
+  }
+  stmgr->writePage(idx_page, &tree);
 }
