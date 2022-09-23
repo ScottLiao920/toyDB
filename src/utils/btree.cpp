@@ -9,7 +9,7 @@ bTreeNode<T>::bTreeNode(int t, bool is_leaf) {
   this->isLeaf_ = is_leaf;
   this->t_ = t;
   this->keys_ = std::vector<T>(2 * t - 1);
-  this->children_ = std::vector<bTreeNode<T> *>(2 * t - 1);
+  this->children_.reserve(2 * t);// = std::vector<bTreeNode<T> *>(2 * t - 1);
   this->loc_ = std::vector<tupleLocType>(2 * t - 1);
   this->cnt_ = 0;
 }
