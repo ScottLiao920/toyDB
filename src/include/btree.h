@@ -24,7 +24,9 @@ class bTreeNode {
   void splitChild(int i, bTreeNode<T> *y);
   void traverse();
   bTreeNode<T> *search(int k);
-  friend class BTree;
+  template<typename type>
+  friend
+  class bTree;
 };
 
 template<class T>

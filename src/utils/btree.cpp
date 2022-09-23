@@ -83,16 +83,16 @@ void bTree<T>::insert(T k, tupleLocType loc) {
   if (root_ == NULL) {
 	root_ = new bTreeNode<T>(t_, true);
 	root_->keys_[0] = k;
-	root_->n = 1;
+	root_->cnt_ = 1;
   } else {
-	if (root_->n == 2 * t_ - 1) {
+	if (root_->cnt_ == 2 * t_ - 1) {
 	  auto *s = new bTreeNode<T>(t_, false);
 	  s->children_[0] = root_;
 	  s->splitChild(0, root_);
 	  int i = 0;
 	  if (s->keys_[0] < k)
 		i++;
-	  s->children_[i]->insertNonFull(k);
+	  s->children_[i]->insertNonFull(k, loc);
 	  root_ = s;
 	} else
 	  root_->insertNonFull(k, loc);
