@@ -1,9 +1,30 @@
 #include <iostream>
-#include <cstring>
 #include "storage.h"
 #include "bufferpool.h"
 #include "parser.h"
 #include "executor.h"
+#include "btree.h"
+
+void testBTree() {
+  bTree<int> t(3);
+  for (auto i = 0; i < 10; ++i) {
+	t.insert(i + 10, tupleLocType(0, i));
+  }
+
+  std::cout << "The B-tree is: ";
+  t.traverse();
+  int k = 10;
+  (t.search(k) != nullptr) ? std::cout << std::endl
+									   << k << " is found"
+						   : std::cout << std::endl
+									   << k << " is not Found";
+
+  k = 2;
+  (t.search(k) != nullptr) ? std::cout << std::endl
+									   << k << " is found"
+						   : std::cout << std::endl
+									   << k << " is not Found\n";
+}
 
 int main() {
   storageManager stmgr;
@@ -44,8 +65,9 @@ int main() {
   seq_scan_executor.Init(&table1, &bpmgr, qual);
   for (unsigned int i = 0; i < 100; ++i) {
 	std::vector<tuple> tup = seq_scan_executor.Next();
-	std::cout << tup[0].content_<<std::endl;
+	std::cout << tup[0].content_ << std::endl;
   }
   seq_scan_executor.End();
+  testBTree();
   return 0;
 }
