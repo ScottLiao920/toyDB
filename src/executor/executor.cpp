@@ -35,11 +35,12 @@ void seqScanExecutor::Init(rel *tab, bufferPoolManager *manager, comparison_expr
   this->qual_ = qual;
   this->cnt_ = 0;
   this->pages_ = this->table_->get_location();
-  manager->readFromDisk(this->pages_[0]);
+  if (manager->findPage(this->pages_[0]) == nullptr) {
+	manager->readFromDisk(this->pages_[0]);
+  }
   this->mem_ptr_ = manager->findPage(this->pages_[0])->content;
 }
-std::vector<tuple> seqScanExecutor::Next() {
-  std::vector<tuple> out;
+void seqScanExecutor::Next(void *dst) {
   size_t len = this->table_->get_tuple_size();
   if (this->mode_ == volcano) {
 	// emit one at a time
@@ -48,13 +49,13 @@ std::vector<tuple> seqScanExecutor::Next() {
 	this->mem_ptr_ += sizeof(char *);
 	std::memcpy(&data_ptr, this->mem_ptr_, sizeof(char *));
 	if (data_ptr == nullptr) {
-	  //last tuple
+	  //last toyDBTUPLE
 	  std::memcpy(&data_ptr, this->mem_ptr_ - sizeof(char *), sizeof(char *));
 	  data_ptr -= len;
 	}
 	std::memcpy(buf, data_ptr, len);
-	tuple tmp(buf, len);
-	out.push_back(tmp);
+	toyDBTUPLE tmp(buf, len);
+	((std::vector<toyDBTUPLE> *)dst)->push_back(tmp);
   } else {
 	// emit a batch at a time
 	for (auto i = 0; i < BATCH_SIZE; i++) {
@@ -63,16 +64,15 @@ std::vector<tuple> seqScanExecutor::Next() {
 	  this->mem_ptr_ += sizeof(char *);
 	  std::memcpy(&data_ptr, this->mem_ptr_, sizeof(char *));
 	  if (data_ptr == nullptr) {
-		//last tuple
+		//last toyDBTUPLE
 		std::memcpy(&data_ptr, this->mem_ptr_ - sizeof(char *), sizeof(char *));
 		data_ptr -= len;
 	  }
 	  std::memcpy(buf, data_ptr, len);
-	  tuple tmp(buf, len);
-	  out.push_back(tmp);
+	  toyDBTUPLE tmp(buf, len);
+	  ((std::vector<toyDBTUPLE> *)dst)->push_back(tmp);
 	}
   }
-  return out;
 }
 void seqScanExecutor::End() {
 //  free(this->memory_context_);

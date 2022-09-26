@@ -65,7 +65,9 @@ int main() {
   seqScanExecutor seq_scan_executor;
   seq_scan_executor.Init(&table1, &bpmgr, qual);
   for (unsigned int i = 0; i < 100; ++i) {
-	std::vector<tuple> tup = seq_scan_executor.Next();
+	std::vector<toyDBTUPLE> tup;
+	tup.reserve(BATCH_SIZE);
+	seq_scan_executor.Next(&tup);
 	std::cout << tup[0].content_ << std::endl;
   }
   seq_scan_executor.End();

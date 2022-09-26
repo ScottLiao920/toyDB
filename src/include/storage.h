@@ -48,20 +48,28 @@ class storageManager {
   void readPage(PhysicalPageID, void *);
 };
 
-class tuple {
+class toyDBTUPLE {
  public:
   char *content_;
   size_t size_;
   RelID table_;
   RowID row_;
-  tuple(const tuple &ref) {
+  toyDBTUPLE() {
+	table_ = INVALID_PHYSICAL_PAGE_ID;
+	row_ = INVALID_PHYSICAL_PAGE_ID;
+	content_ = nullptr;
+  }
+  toyDBTUPLE(const toyDBTUPLE &ref) {
 	size_ = ref.size_;
 	content_ = (char *)std::malloc(size_);
 	std::memcpy(content_, ref.content_, size_);
 	table_ = ref.table_;
 	row_ = ref.row_;
   }
-  tuple(char *buf, size_t len) {
+  toyDBTUPLE(char *buf, size_t len) {
+	if (this->content_ == nullptr) {
+	  this->content_ = (char *)std::malloc(len);
+	}
 	std::memcpy(this->content_, buf, len);
 	this->size_ = len;
   };
@@ -101,7 +109,7 @@ class rel {
   std::vector<row> rows_;
 
   rel() = default;
-//  rel(std::vector<std::tuple(size_t, std::string)>);
+//  rel(std::vector<std::toyDBTUPLE(size_t, std::string)>);
   storageMethod getStorageMethod() { return this->storage_method_; };
   bool set_scheme_(storageMethod);
   void set_name_(std::string);

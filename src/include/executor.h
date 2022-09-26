@@ -15,7 +15,7 @@ class executor {
   execution_mode mode_ = volcano;
  public:
   virtual void Init() = 0;
-  virtual std::vector<tuple> Next() = 0;
+  virtual void Next(void *dst) = 0;
   virtual void End() = 0;
 };
 
@@ -30,7 +30,7 @@ class scanExecutor : protected executor {
   void SetMode(execution_mode);
   void SetTable(rel *);
   void SetBufferPoolManager(bufferPoolManager *);
-  std::vector<tuple> Next() override = 0;
+  void Next(void *dst) override = 0;
   void End() override = 0;
 };
 
@@ -42,7 +42,7 @@ class seqScanExecutor : protected scanExecutor {
  public:
   void Init() override {};
   void Init(rel *, bufferPoolManager *, comparison_expr);
-  std::vector<tuple> Next() override;
+  void Next(void *dst) override;
   void End() override;
 };
 
@@ -50,7 +50,7 @@ class indexScanExecutor : scanExecutor {
   RelID idx_table_;
  public:
   void Init() override;
-  std::vector<tuple> Next() override;
+  void Next(void *dst) override;
   void End() override;
 };
 
@@ -58,7 +58,7 @@ class bitMapIndexScanExecutor : scanExecutor {
   RelID idx_table_;
  public:
   void Init() override;
-  std::vector<tuple> Next() override;
+  void Next(void *dst) override;
   void End() override;
 };
 
@@ -104,7 +104,7 @@ class insertExecutor : executor {
 };
 
 class updateExecutor : executor {
-  // This executor update tuple(s) in a table
+  // This executor update toyDBTUPLE(s) in a table
 };
 
 class indexExecutor : executor {

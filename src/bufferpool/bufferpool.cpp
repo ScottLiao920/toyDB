@@ -64,7 +64,11 @@ void bufferPoolManager::readFromDisk(PhysicalPageID psy_id) {
 void bufferPoolManager::writeToDisk(PhysicalPageID psy_id, size_t idx) {
   this->stmgr_->writePage(psy_id, this->pages_[idx].content);
   this->is_dirty_[idx] = false; // reset is_dirty_ flag
-  this->pin_cnt_[idx] -= 1; // by default, decrease pin_cnt_ by 1 CAUTION
+  if (this->pin_cnt_[idx] > 0) {
+	this->pin_cnt_[idx] = this->pin_cnt_[idx] - 1;
+  } else {
+	this->pin_cnt_[idx] = 0;
+  } // by default, decrease pin_cnt_ by 1 CAUTION
 }
 
 void bufferPoolManager::insertToFrame(int idx, const char *buf, size_t len) {
