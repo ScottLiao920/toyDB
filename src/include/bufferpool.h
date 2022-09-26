@@ -47,7 +47,7 @@ class bufferPoolManager {
 
   void readFromDisk(PhysicalPageID);
 
-  void writeToDisk(PhysicalPageID, int);
+  void writeToDisk(PhysicalPageID, size_t);
 
   void writeToDisk(PhysicalPageID, heapPage *);
 

@@ -42,7 +42,8 @@ int main() {
   for (auto i = 0; i < BUFFER_POOL_SIZE; i++) {
 	bpmgr.printContent(i);
   }
-//    bpmgr.writeToDisk(1, 0);
+  bpmgr.writeToDisk(0, (size_t)0);
+
   std::cout << dst;
   parser p;
   p.parse("SELECT SUM(*) as fck, col1 from table1, table2 where table1.relId_ = table2.relId_ and tabel2.col2 < 100");

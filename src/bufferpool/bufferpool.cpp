@@ -12,26 +12,30 @@ bufferPoolManager::bufferPoolManager(storageManager *stmgr) {
   for (unsigned int cnt = 0; cnt < this->no_pages_; cnt++) {
 	this->page_table_.insert(std::pair(&this->pages_[cnt], INVALID_PHYSICAL_PAGE_ID));
   }
-  this->is_dirty_.reserve(this->no_pages_);
-  this->pin_cnt_.reserve(this->no_pages_);
+  this->is_dirty_ = std::vector<bool>(this->no_pages_);
+  this->pin_cnt_ = std::vector<short>(this->no_pages_);
 }
 
 heapPage *bufferPoolManager::evict() {
   // LRU replacement
-  std::time_t oldest = this->pages_.cbegin()->timestamp;
-  unsigned int cnt;
+  std::time_t oldest = std::time(nullptr);
+  unsigned int cnt, idx = 0;
+  bool found = false;
   for (cnt = 0; cnt < this->no_pages_; ++cnt) {
-	if (this->pin_cnt_[cnt] == 0) {
-	  if (this->pages_[cnt].timestamp < oldest) {
-		if (this->is_dirty_[cnt]) {
-		  // write dirty page to disk before evict it;
-		  this->writeToDisk(this->page_table_[&this->pages_[cnt]], cnt);
-		}
-		std::memset(this->pages_[cnt].content, 0, HEAP_SIZE);
-	  }
+	if (this->pin_cnt_[cnt] == 0 and this->pages_[cnt].timestamp < oldest) {
+	  idx = cnt;
+	  found = true;
 	}
   }
-  return &this->pages_[cnt];
+  if (not found) {
+	return nullptr;
+  }
+  if (this->is_dirty_[idx]) {
+	// write dirty page to disk before evict it;
+	this->writeToDisk(this->page_table_[&this->pages_[idx]], idx);
+  }
+  std::memset(this->pages_[idx].content, 0, HEAP_SIZE);
+  return &this->pages_[idx];
 }
 
 void bufferPoolManager::readFromDisk(PhysicalPageID psy_id) {
@@ -46,7 +50,7 @@ void bufferPoolManager::readFromDisk(PhysicalPageID psy_id) {
 	  it.first->idx_ptr = it.first->content;
 	  this->pin_cnt_[cnt] += 1;
 	  this->is_dirty_[cnt] = false;
-	  cnt += 1;
+	  ++cnt;
 	  return;
 	}
   }
@@ -57,8 +61,10 @@ void bufferPoolManager::readFromDisk(PhysicalPageID psy_id) {
   cleanedPage->timestamp = std::time(nullptr);
 }
 
-void bufferPoolManager::writeToDisk(PhysicalPageID psy_id, int idx) {
+void bufferPoolManager::writeToDisk(PhysicalPageID psy_id, size_t idx) {
   this->stmgr_->writePage(psy_id, this->pages_[idx].content);
+  this->is_dirty_[idx] = false; // reset is_dirty_ flag
+  this->pin_cnt_[idx] -= 1; // by default, decrease pin_cnt_ by 1 CAUTION
 }
 
 void bufferPoolManager::insertToFrame(int idx, const char *buf, size_t len) {

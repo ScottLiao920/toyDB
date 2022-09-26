@@ -15,7 +15,7 @@
 #include <vector>
 
 #define FILEPATH "/mnt/c/users/scorp/ClionProjects/toyDB/data/"
-#define INVALID_PHYSICAL_PAGE_ID 0
+//#define INVALID_PHYSICAL_PAGE_ID 0
 #define PHYSICAL_PAGE_SIZE 8192
 #define HEAP_SIZE 8192
 #define BUFFER_POOL_SIZE 1

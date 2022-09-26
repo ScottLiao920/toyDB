@@ -5,7 +5,6 @@
 #include "btree.h"
 
 void executor::Init() {
-  std::memset(this->memory_context_, 0, EXEC_MEM);
   this->mode_ = volcano;
 }
 
@@ -36,7 +35,8 @@ void seqScanExecutor::Init(rel *tab, bufferPoolManager *manager, comparison_expr
   this->qual_ = qual;
   this->cnt_ = 0;
   this->pages_ = this->table_->get_location();
-  manager->stmgr_->readPage(this->pages_[0], this->memory_context_);
+  manager->readFromDisk(this->pages_[0]);
+  this->mem_ptr_ = manager->findPage(this->pages_[0])->content;
 }
 std::vector<tuple> seqScanExecutor::Next() {
   std::vector<tuple> out;
@@ -59,10 +59,17 @@ std::vector<tuple> seqScanExecutor::Next() {
 	// emit a batch at a time
 	for (auto i = 0; i < BATCH_SIZE; i++) {
 	  char buf[len];
-	  std::memcpy(buf, this->mem_ptr_, len);
+	  char *data_ptr = (char *)malloc(sizeof(char *));
+	  this->mem_ptr_ += sizeof(char *);
+	  std::memcpy(&data_ptr, this->mem_ptr_, sizeof(char *));
+	  if (data_ptr == nullptr) {
+		//last tuple
+		std::memcpy(&data_ptr, this->mem_ptr_ - sizeof(char *), sizeof(char *));
+		data_ptr -= len;
+	  }
+	  std::memcpy(buf, data_ptr, len);
 	  tuple tmp(buf, len);
 	  out.push_back(tmp);
-	  this->mem_ptr_ += len;
 	}
   }
   return out;

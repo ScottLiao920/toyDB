@@ -13,7 +13,6 @@ class executor {
   //abstract class for all the executors
  protected:
   execution_mode mode_ = volcano;
-  char memory_context_[EXEC_MEM] = "";
  public:
   virtual void Init() = 0;
   virtual std::vector<tuple> Next() = 0;
@@ -38,10 +37,8 @@ class scanExecutor : protected executor {
 class seqScanExecutor : protected scanExecutor {
  private:
   unsigned int cnt_;
-  char *mem_ptr_ = memory_context_;
+  char *mem_ptr_ = nullptr;
   std::vector<PhysicalPageID> pages_;
- protected:
-  using executor::memory_context_;
  public:
   void Init() override {};
   void Init(rel *, bufferPoolManager *, comparison_expr);
