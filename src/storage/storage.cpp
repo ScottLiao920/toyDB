@@ -53,9 +53,10 @@ void storageManager::readPage(PhysicalPageID page_id, void *dst) {
   pages_[page_id].readPage((char *)dst);
 }
 
-column::column(std::string inp_name, size_t size, RelID par_table) {
+column::column(std::string inp_name, size_t size, RelID par_table, const std::type_info &type_info) {
   this->name_ = inp_name;
   this->width_ = size;
+  this->type_ = type_info.name();
   this->rel_ = par_table;
   this->cnt_ = 0;
 }
@@ -78,9 +79,11 @@ void rel::add_rows(const std::vector<size_t> &widths) {
   }
 }
 
-void rel::add_columns(const std::vector<std::string> &names, const std::vector<size_t> &widths) {
+void rel::add_columns(const std::vector<std::string> &names,
+					  const std::vector<size_t> &widths,
+					  const std::vector<std::type_info> &types) {
   for (std::vector<size_t>::size_type i = 0; i < names.size(); ++i) {
-	this->cols_.emplace_back(names[i], widths[i], this->relId_);
+	this->cols_.emplace_back(names[i], widths[i], this->relId_, types[i]);
   }
 }
 
@@ -92,8 +95,8 @@ void rel::add_row(const row &inp_row) {
   this->rows_.push_back(inp_row);
 }
 
-void rel::add_column(const std::string &inp_name, const size_t &inp_size) {
-  this->cols_.emplace_back(inp_name, inp_size, this->relId_);
+void rel::add_column(const std::string &inp_name, const size_t &inp_size, const std::type_info &type_info) {
+  this->cols_.emplace_back(inp_name, inp_size, this->relId_, type_info);
 }
 
 void rel::add_column(const column &inp_column) {

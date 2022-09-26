@@ -27,6 +27,7 @@ class aggr_expr : expr {
 class comparison_expr : expr {
  public:
   comparision comparision_type;
+  //TODO: should have a function pointer which points to the actuall function of this comparison.
 };
 
 class queryTree {

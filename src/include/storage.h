@@ -80,9 +80,10 @@ class column {
   size_t width_;
   size_t cnt_;
   RelID rel_;
+  std::string type_;
  public:
   size_t getSize() { return this->width_; }
-  column(std::string, size_t, RelID);
+  column(std::string, size_t, RelID, const std::type_info &);
   std::vector<PhysicalPageID> pages_;
 };
 
@@ -119,9 +120,9 @@ class rel {
   void add_row(const size_t &);
   void update_row(bufferPoolManager *, std::vector<row>::size_type, char *);
   void add_columns(std::vector<column>);
-  void add_columns(const std::vector<std::string> &, const std::vector<size_t> &);
+  void add_columns(const std::vector<std::string> &, const std::vector<size_t> &, const std::vector<std::type_info> &);
   void add_column(const column &);
-  void add_column(const std::string &, const size_t &);
+  void add_column(const std::string &, const size_t &, const std::type_info &);
   std::vector<PhysicalPageID> get_location();
   size_t get_tuple_size();
 };

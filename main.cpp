@@ -51,15 +51,15 @@ int main() {
   rel table1, table2;
   table1.set_name_("A");
   table2.set_name_("B");
-  table1.add_column("relId_", 8);
-  table2.add_column("relId_", 8);
-  table2.add_column("col2", sizeof(float));
-  char id[8] = "AAAAAAA";
-//  id[0] = '1';
+  table1.add_column("relId_", sizeof(int), typeid(int));
+  table2.add_column("relId_", sizeof(int), typeid(int));
+  table2.add_column("col2", sizeof(float), typeid(float));
+  int id = 0;
   for (unsigned int i = 0; i < 100; ++i) {
 	table1.add_row(8);
 	table1.rows_.back().pages_.push_back(1);
-	table1.update_row(&bpmgr, i, id);
+	table1.update_row(&bpmgr, i, (char *)&id);
+	++id;
   }
   comparison_expr qual;
   seqScanExecutor seq_scan_executor;
@@ -68,7 +68,7 @@ int main() {
 	std::vector<toyDBTUPLE> tup;
 	tup.reserve(BATCH_SIZE);
 	seq_scan_executor.Next(&tup);
-	std::cout << tup[0].content_ << std::endl;
+	std::cout << (int)*tup[0].content_ << std::endl;
   }
   seq_scan_executor.End();
   testBTree();
