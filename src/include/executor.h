@@ -111,10 +111,10 @@ class indexExecutor : executor {
   // This executor build an index on a column;
  private:
   index_type type_;
-  storageManager *stmgr_;
+  bufferPoolManager *bpmgr_;
  public:
   void Init() override;
-  void Init(storageManager *, rel *, size_t, index_type);
+  void Init(bufferPoolManager *, rel *, size_t, index_type);
 };
 
 class sortExecutor : executor {

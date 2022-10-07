@@ -80,11 +80,11 @@ class column {
   size_t width_;
   size_t cnt_;
   RelID rel_;
-  std::string type_;
  public:
   size_t getSize() { return this->width_; }
   column(std::string, size_t, RelID, const std::type_info &);
   std::vector<PhysicalPageID> pages_;
+  std::type_index typeid_;
 };
 
 class row {

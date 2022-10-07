@@ -80,32 +80,42 @@ void seqScanExecutor::End() {
 void indexExecutor::Init() {
   executor::Init();
 }
-void indexExecutor::Init(storageManager *stmgr, rel *tab, size_t idx, index_type type = btree) {
-  PhysicalPageID idx_page = stmgr->addPage();
-  bTree<int> tree(10); // need a member in row/col to tell the datatype
+void indexExecutor::Init(bufferPoolManager *bpmgr, rel *tab, size_t idx, index_type = btree) {
+  this->bpmgr_ = bpmgr;
+  PhysicalPageID idx_page = bpmgr->stmgr_->addPage(); // allocate a new page for index
+  bTree<int> tree(10);
+  //TODO: need a member in row/col to tell the datatype; also the spanning factor should be configurable
   if (tab->getStorageMethod() == row_store) {
 	PhysicalPageID prev = INVALID_PHYSICAL_PAGE_ID;
-	char buf[PHYSICAL_PAGE_SIZE];
-	char *ptr = buf;
+	heapPage *cur_heap_page = nullptr;
 	int cnt = 0;
 	for (const auto &it : tab->rows_) {
 	  if (it.pages_.size() == 1) {
 		// every row is only spanned over 1 page, makes life much easier
 		if (it.pages_[0] != prev) {
-		  // write previous page in buffer back, read new page from disk
+		  // need to fetch new page from disk. write previous page in buffer back.
 		  if (prev != INVALID_PHYSICAL_PAGE_ID) {
-			stmgr->writePage(prev, buf);
+			bpmgr->writeToDisk(prev, cur_heap_page);
 		  }
-		  stmgr->readPage(it.pages_[0], buf);
-		  ptr = buf;
+		  cur_heap_page = bpmgr->findPage(it.pages_[0]);
+		  if (cur_heap_page == nullptr) {
+			// not in buffer pull
+			bpmgr->readFromDisk(it.pages_[0]);
+			cur_heap_page = bpmgr->findPage(it.pages_[0]);
+		  }
 		  cnt = 0;
 		  prev = it.pages_[0];
 		}
-		int *val = nullptr;
-		std::memcpy(val, ptr, sizeof(int)); // not true. Need to be the idx-th column
+		char *data_ptr = (char *)malloc(sizeof(char *));
+		std::memcpy(&data_ptr, cur_heap_page->content + idx * (sizeof(char *)), sizeof(char *));
+		char *prev_data_ptr = (char *)malloc(sizeof(char *));
+		std::memcpy(&prev_data_ptr, cur_heap_page->content + (idx - 1) * (sizeof(char *)), sizeof(char *));
+		size_t len = prev_data_ptr - data_ptr;
+		char *val = (char *)std::malloc(len);
+		std::memcpy(val, data_ptr, len);
 		tree.insert(*val, std::tuple(prev, cnt));
 	  }
 	}
   }
-  stmgr->writePage(idx_page, &tree);
+  bpmgr->stmgr_->writePage(idx_page, &tree);
 }

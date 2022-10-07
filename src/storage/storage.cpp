@@ -53,10 +53,10 @@ void storageManager::readPage(PhysicalPageID page_id, void *dst) {
   pages_[page_id].readPage((char *)dst);
 }
 
-column::column(std::string inp_name, size_t size, RelID par_table, const std::type_info &type_info) {
+column::column(std::string inp_name, size_t size, RelID par_table, const std::type_info &type) {
   this->name_ = inp_name;
   this->width_ = size;
-  this->type_ = type_info.name();
+  this->typeid_ = std::type_index(type);
   this->rel_ = par_table;
   this->cnt_ = 0;
 }

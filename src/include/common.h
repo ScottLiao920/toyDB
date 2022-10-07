@@ -12,6 +12,7 @@
 #include <iostream>
 #include <fstream>
 #include <unistd.h>
+#include <typeindex>
 #include <vector>
 
 #define FILEPATH "/mnt/c/users/scorp/ClionProjects/toyDB/data/"
