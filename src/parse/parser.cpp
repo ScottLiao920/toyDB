@@ -106,8 +106,12 @@ void parser::parse(const std::string &sql_string) {
 	  std::string first_operand, second_operand;
 	  first_operand = op.format("$`");
 	  second_operand = op.format("$'");
-	  std::remove(first_operand.begin(), first_operand.end(), ' ');
-	  std::remove(second_operand.begin(), second_operand.end(), ' ');
+	  first_operand.erase(std::remove_if(first_operand.begin(),
+										 first_operand.end(),
+										 [](unsigned char x) { return std::isspace(x); }), first_operand.end());
+	  second_operand.erase(std::remove_if(second_operand.begin(),
+										  second_operand.end(),
+										  [](unsigned char x) { return std::isspace(x); }), second_operand.end());
 	  cur_qual->data_srcs.push_back(first_operand);
 	  cur_qual->data_srcs.push_back(second_operand);
 	  // check comparison type and assign it accordingly. Maybe have a dict for it?
@@ -142,4 +146,17 @@ expr::expr() {
 
 expr::~expr() {
 //  free(this);
+}
+
+template<typename T>
+bool comparison_expr::compare(T lhs, T rhs) {
+  switch (this->comparision_type) {
+	case equal: return (lhs == rhs);
+	case lt:return (lhs < rhs);
+	case ne:return (lhs != rhs);
+	case gt:return (lhs > rhs);
+	case ngt:return (lhs <= rhs);
+	case nlt:return (lhs >= rhs);
+	case NO_COMP:return true;
+  }
 }
