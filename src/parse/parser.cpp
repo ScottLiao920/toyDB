@@ -35,7 +35,6 @@ void parser::parse(const std::string &sql_string) {
   boost::split(target_list, TL_RTE[0], boost::is_any_of(","));
   for (auto &it : target_list) {
 	expr *cur_expr = new expr;
-	std::memset(cur_expr, 0, sizeof(expr));
 
 	// check for alias
 	if (it.find("AS") != std::string::npos) {
