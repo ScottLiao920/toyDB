@@ -125,6 +125,7 @@ class rel {
   void add_column(const std::string &, const size_t &, const std::type_info &);
   std::vector<PhysicalPageID> get_location();
   size_t get_tuple_size();
+  std::string GetName() {return this->name_;}
 };
 
 #endif //TOYDB_STORAGE_H

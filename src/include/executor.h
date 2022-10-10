@@ -23,13 +23,15 @@ class scanExecutor : protected executor {
   // abstract class for scan executors
  protected:
   rel *table_;
-  comparison_expr qual_;
+  comparison_expr* qual_;
   bufferPoolManager *bpmgr_;
  public:
   void Init() override = 0;
   void SetMode(execution_mode);
   void SetTable(rel *);
   void SetBufferPoolManager(bufferPoolManager *);
+  std::string GetTable() { return this->table_->GetName(); }
+  void SetQual(comparison_expr* qual) { this->qual_ = qual; }
   void Next(void *dst) override = 0;
   void End() override = 0;
 };
