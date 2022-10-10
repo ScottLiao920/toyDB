@@ -84,7 +84,7 @@ class column {
   size_t getSize() { return this->width_; }
   column(std::string, size_t, RelID, const std::type_info &);
   std::vector<PhysicalPageID> pages_;
-  std::type_index typeid_;
+  size_t typeid_;
 };
 
 class row {

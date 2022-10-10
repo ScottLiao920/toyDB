@@ -121,4 +121,17 @@ class sortExecutor : executor {
   // This executor sort a column inside a table;
 };
 
+class selectExecutor : executor {
+  // this executor emits the result tuple from underlying executors to user
+ private:
+  std::vector<expr *> targetList_;
+  std::vector<executor *> children_;
+  size_t cnt_ = 0;
+ public:
+  void Init() override {};
+  void Init(std::vector<expr *>, std::vector<executor *>);
+  void Next(void *) override;
+  void End() override;
+};
+
 #endif //TOYDB_SRC_INCLUDE_EXECUTOR_H_

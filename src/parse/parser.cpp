@@ -2,10 +2,7 @@
 // Created by liaoc on 9/15/22.
 //
 
-#include <cstring>
 #include "parser.h"
-#include "regex"
-#include <boost/algorithm/string.hpp>
 
 queryTree::queryTree() {
   this->command_ = INVALID_COMMAND;
@@ -42,9 +39,12 @@ void parser::parse(const std::string &sql_string) {
 	  boost::iter_split(name_alias, it, boost::algorithm::first_finder("AS"));
 	  assert(name_alias.size() == 2);
 	  cur_expr->alias = name_alias[1];
-	  boost::erase_all(cur_expr->alias, " ");
 	  it = it.substr(0, it.find("AS"));
+	} else {
+	  // just use input as alias
+	  cur_expr->alias = it;
 	}
+	boost::erase_all(cur_expr->alias, " ");
 
 	// check for aggregation, nested aggregation (MIN(MAX(...) )) currently not supported.
 	if (it.find("MIN(") != std::string::npos) {

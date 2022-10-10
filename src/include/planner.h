@@ -6,10 +6,22 @@
 #define TOYDB_PLANNER_H
 
 #include "common.h"
+#include "parser.h"
+#include "executor.h"
+
+struct planTree {
+  executor *root;
+};
 
 class planner {
  private:
+  std::vector<std::tuple<planTree *, size_t>> trees;
+  planTree *cheapest_tree_;
  public:
+  friend class parser;
+  planner() = default;
+  void plan(queryTree *);
+  void execute();
 };
 
 #endif //TOYDB_PLANNER_H

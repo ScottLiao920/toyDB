@@ -119,3 +119,30 @@ void indexExecutor::Init(bufferPoolManager *bpmgr, rel *tab, size_t idx, index_t
   }
   bpmgr->stmgr_->writePage(idx_page, &tree);
 }
+void selectExecutor::Init(std::vector<expr *> exprs, std::vector<executor *> children) {
+  this->targetList_ = exprs;
+  this->children_ = children;
+  std::cout << "    ";
+  for (auto it : exprs) {
+	std::cout << "|" << it->alias;
+  }
+  std::cout << std::endl;
+}
+void selectExecutor::Next(void *) {
+  std::cout << "    ";
+  for (auto it : children_) {
+	auto *buf = new std::vector<toyDBTUPLE>;
+	it->Next(buf);
+	if (this->mode_ == volcano) {
+	  std::cout << "|" << buf->cbegin()->content_;
+	} else {
+	  //TODO: For batched execution
+	}
+	delete buf;
+  }
+  std::cout << std::endl;
+  this->cnt_ += 1;
+}
+void selectExecutor::End() {
+  std::cout << "Output " << this->cnt_ << "tuples." << std::endl;
+}
