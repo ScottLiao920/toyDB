@@ -34,9 +34,11 @@ std::vector<executor *> plan_node(expr *expression) {
 	  break;
 	}
 	case COL: {
-	  // TODO: should have multiple choices for scan operator.
-	  auto tmp = new seqScanExecutor;
-	  out.push_back((executor *)tmp);
+	  // TODO: should have multiple choices for scan operator. currently those executor does not override virtual methods
+	  for (join_type it = nestedLoopJoin; it < hashJoin; it = join_type(it + 1)) {
+		auto tmp = new seqScanExecutor;
+		out.push_back((executor *)tmp);
+	  }
 	  break;
 	}
 	default: break;
