@@ -128,11 +128,15 @@ void selectExecutor::Init(std::vector<expr *> exprs, std::vector<executor *> chi
   }
   std::cout << std::endl;
 }
-void selectExecutor::Next(void *) {
+void selectExecutor::Next(void *dst) {
   std::cout << "    ";
   for (auto it : children_) {
 	auto *buf = new std::vector<toyDBTUPLE>;
 	it->Next(buf);
+	if (buf->empty()) {
+	  std::memset(dst, 0, sizeof(char));
+	  continue;
+	}
 	if (this->mode_ == volcano) {
 	  std::cout << "|" << buf->cbegin()->content_;
 	} else {

@@ -84,6 +84,12 @@ class mergeJoinExecutor : joinExecutor {
 
 };
 
+class aggregateExecutor : executor {
+  void Init() override;
+  void Next(void *) override;
+  void End() override;
+};
+
 class createExecutor : executor {
   // This executor creates a table
  private:
@@ -129,6 +135,7 @@ class selectExecutor : executor {
   size_t cnt_ = 0;
  public:
   void Init() override {};
+  void addChild(executor *exec) { this->children_.push_back(exec); };
   void Init(std::vector<expr *>, std::vector<executor *>);
   void Next(void *) override;
   void End() override;
