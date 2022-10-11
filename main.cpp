@@ -44,7 +44,7 @@ int main() {
   }
   bpmgr.writeToDisk(0, (size_t)0);
 
-  std::cout << dst;
+  std::cout << dst << std::endl;
   parser p;
   p.parse("SELECT SUM(*) as fck, col1 from table1, table2 where table1.relId_ = table2.relId_ and tabel2.col2 < 100");
 
@@ -52,13 +52,17 @@ int main() {
   table1.set_name_("A");
   table2.set_name_("B");
   table1.add_column("relId_", sizeof(int), typeid(int));
+  table1.add_column("content", 32, typeid(char));
   table2.add_column("relId_", sizeof(int), typeid(int));
   table2.add_column("col2", sizeof(float), typeid(float));
   int id = 0;
   for (unsigned int i = 0; i < 100; ++i) {
-	table1.add_row(8);
+	char tmp[sizeof(int) + 32];
+	std::memset(tmp, id, sizeof(int));
+	tmp[sizeof(int) + 2] = 'A';
+	table1.add_row(sizeof(int) + 32);
 	table1.rows_.back().pages_.push_back(1);
-	table1.update_row(&bpmgr, i, (char *)&id);
+	table1.update_row(&bpmgr, i, tmp);
 	++id;
   }
   comparison_expr qual;
@@ -68,7 +72,7 @@ int main() {
 	std::vector<toyDBTUPLE> tup;
 	tup.reserve(BATCH_SIZE);
 	seq_scan_executor.Next(&tup);
-	std::cout << (int)*tup[0].content_ << std::endl;
+	std::cout << (int)*tup[0].content_ << (char)(tup[0].content_[sizeof(int) + 2]) << std::endl;
   }
   seq_scan_executor.End();
   testBTree();

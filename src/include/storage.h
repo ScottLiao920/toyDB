@@ -69,17 +69,8 @@ class toyDBTUPLE {
 	row_ = ref.row_;
 	sizes_ = ref.sizes_;
   }
-  toyDBTUPLE(char *buf, size_t len, std::vector<size_t> sizes) {
-	if (this->content_ == nullptr) {
-	  this->content_ = (char *)std::malloc(len);
-	}
-	std::memcpy(this->content_, buf, len);
-	this->size_ = len;
-	this->sizes_ = sizes;
-	if (std::accumulate(this->sizes_.cbegin(), this->sizes_.cend(), 0) != this->size_) {
-	  std::cout << "Check size!" << std::endl;
-	}
-  };
+  toyDBTUPLE(char *buf, size_t len, std::vector<size_t> sizes);
+  ~toyDBTUPLE();
 };
 
 class column {

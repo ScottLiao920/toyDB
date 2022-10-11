@@ -173,3 +173,17 @@ void row::insert(bufferPoolManager *bpmgr, char *content) {
   bpmgr->insertToFrame(cur_frame, content, this->width_);
   bpmgr->writeToDisk(this->pages_.back(), cur_frame);
 }
+toyDBTUPLE::toyDBTUPLE(char *buf, size_t len, std::vector<size_t> sizes) {
+  if (this->content_ == nullptr) {
+	this->content_ = (char *)new char[len];
+  }
+  std::memcpy(this->content_, buf, len);
+  this->size_ = len;
+  this->sizes_ = std::move(sizes);
+  if (std::accumulate(this->sizes_.cbegin(), this->sizes_.cend(), (size_t)0) != this->size_) {
+	std::cout << "Check size!" << std::endl;
+  }
+}
+toyDBTUPLE::~toyDBTUPLE() {
+  free(this->content_);
+}

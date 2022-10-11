@@ -41,6 +41,7 @@ void seqScanExecutor::Next(void *dst) {
   if (this->mode_ == volcano) {
 	// emit one at a time
 	char buf[len];
+	std::memset(buf, 0, len);
 	char *data_ptr = (char *)malloc(sizeof(char *));
 	this->mem_ptr_ += sizeof(char *);
 	std::memcpy(&data_ptr, this->mem_ptr_, sizeof(char *));
@@ -50,8 +51,7 @@ void seqScanExecutor::Next(void *dst) {
 	  data_ptr -= len;
 	}
 	std::memcpy(buf, data_ptr, len);
-	toyDBTUPLE tmp(buf, len, sizes);
-	((std::vector<toyDBTUPLE> *)dst)->push_back(tmp);
+	((std::vector<toyDBTUPLE> *)dst)->emplace_back((char *)buf, len, sizes);
   } else {
 	// emit a batch at a time
 	for (auto i = 0; i < BATCH_SIZE; i++) {
@@ -65,8 +65,7 @@ void seqScanExecutor::Next(void *dst) {
 		data_ptr -= len;
 	  }
 	  std::memcpy(buf, data_ptr, len);
-	  toyDBTUPLE tmp(buf, len, sizes);
-	  ((std::vector<toyDBTUPLE> *)dst)->push_back(tmp);
+	  ((std::vector<toyDBTUPLE> *)dst)->emplace_back((char *)buf, len, sizes);
 	}
   }
 }
@@ -160,9 +159,9 @@ void nestedLoopJoinExecutor::Next(void *dst) {
 		break;
 	  }
 	  for (const auto &right : right_tuple) {
-		if (this->pred_->compare(it.content_, right.content_)) {
-		  ((std::vector<toyDBTUPLE> *)dst)->push_back(it, right);
-		}
+//		if (this->pred_->compare(it.content_, right.content_)) {
+//		  ((std::vector<toyDBTUPLE> *)dst)->push_back(it, right);
+//		}
 	  }
 	}
   }

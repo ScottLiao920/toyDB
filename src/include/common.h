@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <typeindex>
 #include <vector>
+#include <numeric>
 #include "config.h"
 
 typedef unsigned int HEAP_PAGE_ID;
