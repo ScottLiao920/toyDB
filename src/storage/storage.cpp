@@ -179,11 +179,35 @@ toyDBTUPLE::toyDBTUPLE(char *buf, size_t len, std::vector<size_t> sizes) {
   }
   std::memcpy(this->content_, buf, len);
   this->size_ = len;
-  this->sizes_ = std::move(sizes);
+  this->sizes_ = std::vector<size_t>(std::move(sizes));
   if (std::accumulate(this->sizes_.cbegin(), this->sizes_.cend(), (size_t)0) != this->size_) {
 	std::cout << "Check size!" << std::endl;
   }
 }
+//toyDBTUPLE::toyDBTUPLE(const toyDBTUPLE &ref) {
+//  this->size_ = ref.size_;
+//  content_ = (char *)new char[size_];
+//  std::memcpy(this->content_, ref.content_, this->size_);
+//  this->table_ = ref.table_;
+//  this->row_ = ref.row_;
+//  this->sizes_ = std::vector<size_t>(ref.sizes_);
+//}
 toyDBTUPLE::~toyDBTUPLE() {
-  free(this->content_);
+//  delete[] this->content_;
 }
+
+toyDBTUPLE &toyDBTUPLE::operator=(const toyDBTUPLE &ref) {
+  if (&ref != this) {
+	this->size_ = ref.size_;
+	this->content_ = (char *)new char[size_];
+	std::memcpy(this->content_, ref.content_, this->size_);
+	this->table_ = ref.table_;
+	this->row_ = ref.row_;
+	for (auto it : ref.sizes_) {
+	  this->sizes_.push_back(it);
+	}
+//	this->sizes_ = std::vector<size_t>(ref.sizes_);
+  }
+  return *this;
+}
+

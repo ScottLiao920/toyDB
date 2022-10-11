@@ -11,7 +11,7 @@
 #define HEAP_SIZE 8192
 #define BUFFER_POOL_SIZE 1
 #define EXEC_MEM 8192
-#define BATCH_SIZE 64
+#define BATCH_SIZE 1
 
 enum storageMethod {
   row_store, col_store

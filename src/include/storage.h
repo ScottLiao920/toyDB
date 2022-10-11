@@ -57,19 +57,15 @@ class toyDBTUPLE {
   RowID row_; // row number in the source table
   std::vector<size_t> sizes_; // sizes of individual columns, the sum of this vector should equal to size_
   toyDBTUPLE() {
-	table_ = INVALID_PHYSICAL_PAGE_ID;
-	row_ = INVALID_PHYSICAL_PAGE_ID;
-	content_ = nullptr;
+	this->table_ = INVALID_PHYSICAL_PAGE_ID;
+	this->row_ = INVALID_PHYSICAL_PAGE_ID;
+	this->content_ = nullptr;
+	this->size_ = 0;
+	this->sizes_ = std::vector<size_t>(1, 0);
   }
-  toyDBTUPLE(const toyDBTUPLE &ref) {
-	size_ = ref.size_;
-	content_ = (char *)std::malloc(size_);
-	std::memcpy(content_, ref.content_, size_);
-	table_ = ref.table_;
-	row_ = ref.row_;
-	sizes_ = ref.sizes_;
-  }
+//  toyDBTUPLE(const toyDBTUPLE &ref);
   toyDBTUPLE(char *buf, size_t len, std::vector<size_t> sizes);
+  toyDBTUPLE &operator=(const toyDBTUPLE &);
   ~toyDBTUPLE();
 };
 

@@ -51,7 +51,10 @@ void seqScanExecutor::Next(void *dst) {
 	  data_ptr -= len;
 	}
 	std::memcpy(buf, data_ptr, len);
-	((std::vector<toyDBTUPLE> *)dst)->emplace_back((char *)buf, len, sizes);
+//	auto tmp = new toyDBTUPLE((char *)buf, len, sizes);
+//	((std::vector<toyDBTUPLE> *)dst)->at(0) = *tmp;
+	((std::vector<toyDBTUPLE> *)dst)->emplace(((std::vector<toyDBTUPLE> *)dst)->begin(), (char *)buf, len, sizes);
+//	((std::vector<toyDBTUPLE> *)dst)->emplace_back((char *)buf, len, sizes);
   } else {
 	// emit a batch at a time
 	for (auto i = 0; i < BATCH_SIZE; i++) {
