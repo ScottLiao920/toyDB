@@ -64,20 +64,24 @@ class bitMapIndexScanExecutor : scanExecutor {
   void End() override {};
 };
 
-class joinExecutor : executor {
+class joinExecutor : protected executor {
+ protected:
   // abstract class for all join executors
-  comparison_expr pred_;
-  executor *left_child_;
-  executor *right_child_;
+  comparison_expr *pred_ = nullptr;
+  executor *left_child_ = nullptr;
+  executor *right_child_ = nullptr;
  public:
   void Init() override = 0;
   void Next(void *dst) override = 0;
   void End() override = 0;
 };
 
-class nestedLoopJoinExecutor : joinExecutor {
+class nestedLoopJoinExecutor : protected joinExecutor {
   void Init() override {};
-  void Next(void *dst) override {};
+  void SetLeft(executor *left) { this->left_child_ = left; };
+  void SetRight(executor *right) { this->right_child_ = right; };
+  void SetPredicate(comparison_expr* tmp) { this->pred_ = tmp; }
+  void Next(void *dst) override;
   void End() override {};
 };
 

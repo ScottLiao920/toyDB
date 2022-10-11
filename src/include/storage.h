@@ -49,11 +49,13 @@ class storageManager {
 };
 
 class toyDBTUPLE {
+  // This class serves as an in-memory structure for a tuple;
  public:
-  char *content_;
-  size_t size_;
-  RelID table_;
-  RowID row_;
+  char *content_; // Actual content
+  size_t size_; // total length
+  RelID table_; // table source
+  RowID row_; // row number in the source table
+  std::vector<size_t> sizes_; // sizes of individual columns, the sum of this vector should equal to size_
   toyDBTUPLE() {
 	table_ = INVALID_PHYSICAL_PAGE_ID;
 	row_ = INVALID_PHYSICAL_PAGE_ID;
@@ -65,13 +67,18 @@ class toyDBTUPLE {
 	std::memcpy(content_, ref.content_, size_);
 	table_ = ref.table_;
 	row_ = ref.row_;
+	sizes_ = ref.sizes_;
   }
-  toyDBTUPLE(char *buf, size_t len) {
+  toyDBTUPLE(char *buf, size_t len, std::vector<size_t> sizes) {
 	if (this->content_ == nullptr) {
 	  this->content_ = (char *)std::malloc(len);
 	}
 	std::memcpy(this->content_, buf, len);
 	this->size_ = len;
+	this->sizes_ = sizes;
+	if (std::accumulate(this->sizes_.cbegin(), this->sizes_.cend(), 0) != this->size_) {
+	  std::cout << "Check size!" << std::endl;
+	}
   };
 };
 
@@ -125,7 +132,8 @@ class rel {
   void add_column(const std::string &, const size_t &, const std::type_info &);
   std::vector<PhysicalPageID> get_location();
   size_t get_tuple_size();
-  std::string GetName() {return this->name_;}
+  std::vector<size_t> GetColSizes();
+  std::string GetName() { return this->name_; }
 };
 
 #endif //TOYDB_STORAGE_H

@@ -17,11 +17,6 @@ void scanExecutor::SetTable(rel *tab) {
 void scanExecutor::SetBufferPoolManager(bufferPoolManager *manager) {
   this->bpmgr_ = manager;
 }
-void joinExecutor::Init() {
-  executor::Init();
-  this->left_child_ = nullptr; // wait for planner to set it
-  this->right_child_ = nullptr; // wait for planner to set it
-}
 void createExecutor::Init() {
   executor::Init();
 }
@@ -42,6 +37,7 @@ void seqScanExecutor::Init(rel *tab, bufferPoolManager *manager, comparison_expr
 }
 void seqScanExecutor::Next(void *dst) {
   size_t len = this->table_->get_tuple_size();
+  std::vector<size_t> sizes = this->table_->GetColSizes();
   if (this->mode_ == volcano) {
 	// emit one at a time
 	char buf[len];
@@ -54,12 +50,12 @@ void seqScanExecutor::Next(void *dst) {
 	  data_ptr -= len;
 	}
 	std::memcpy(buf, data_ptr, len);
-	toyDBTUPLE tmp(buf, len);
+	toyDBTUPLE tmp(buf, len, sizes);
 	((std::vector<toyDBTUPLE> *)dst)->push_back(tmp);
   } else {
 	// emit a batch at a time
 	for (auto i = 0; i < BATCH_SIZE; i++) {
-	  char buf[len];
+	  char buf[len * BATCH_SIZE];
 	  char *data_ptr = (char *)malloc(sizeof(char *));
 	  this->mem_ptr_ += sizeof(char *);
 	  std::memcpy(&data_ptr, this->mem_ptr_, sizeof(char *));
@@ -69,7 +65,7 @@ void seqScanExecutor::Next(void *dst) {
 		data_ptr -= len;
 	  }
 	  std::memcpy(buf, data_ptr, len);
-	  toyDBTUPLE tmp(buf, len);
+	  toyDBTUPLE tmp(buf, len, sizes);
 	  ((std::vector<toyDBTUPLE> *)dst)->push_back(tmp);
 	}
   }
@@ -149,4 +145,25 @@ void selectExecutor::Next(void *dst) {
 }
 void selectExecutor::End() {
   std::cout << "Output " << this->cnt_ << "tuples." << std::endl;
+}
+void nestedLoopJoinExecutor::Next(void *dst) {
+  for (;;) {
+	std::vector<toyDBTUPLE> left_tuple;
+	this->left_child_->Next(&left_tuple);
+	if (left_tuple.empty()) {
+	  break;
+	}
+	for (const auto &it : left_tuple) {
+	  std::vector<toyDBTUPLE> right_tuple;
+	  this->right_child_->Next(&right_tuple);
+	  if (right_tuple.empty()) {
+		break;
+	  }
+	  for (const auto &right : right_tuple) {
+		if (this->pred_->compare(it.content_, right.content_)) {
+		  ((std::vector<toyDBTUPLE> *)dst)->push_back(it, right);
+		}
+	  }
+	}
+  }
 }

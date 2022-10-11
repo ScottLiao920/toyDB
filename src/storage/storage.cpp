@@ -146,6 +146,13 @@ size_t rel::get_tuple_size() {
 	return out;
   }
 }
+std::vector<size_t> rel::GetColSizes() {
+  std::vector<size_t> out;
+  for (auto &it : this->cols_) {
+	out.push_back(it.getSize());
+  }
+  return out;
+}
 
 row::row(size_t size, RelID par_table) {
   this->id_ = std::time(nullptr);
