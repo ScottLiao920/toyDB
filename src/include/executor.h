@@ -94,9 +94,9 @@ class mergeJoinExecutor : joinExecutor {
 };
 
 class aggregateExecutor : executor {
-  void Init() override;
-  void Next(void *) override;
-  void End() override;
+  void Init() override {};
+  void Next(void *) override {};
+  void End() override {};
 };
 
 class createExecutor : executor {

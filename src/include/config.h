@@ -30,7 +30,7 @@ enum join_type {
 };
 
 enum scan_type {
-  sequential, index, bitMapIndex
+  sequentialScan, indexScan, bitMapIndexScan
 };
 
 #endif //TOYDB_SRC_INCLUDE_CONFIG_H_

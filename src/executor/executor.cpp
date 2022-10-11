@@ -32,7 +32,7 @@ void createExecutor::setStorageManager(storageManager *manager) {
 void seqScanExecutor::Init(rel *tab, bufferPoolManager *manager, comparison_expr qual) {
   this->table_ = tab;
   this->bpmgr_ = manager;
-  this->qual_ = qual;
+  this->qual_ = &qual;
   this->cnt_ = 0;
   this->pages_ = this->table_->get_location();
   if (manager->findPage(this->pages_[0]) == nullptr) {
