@@ -34,11 +34,14 @@ std::vector<executor *> plan_node(expr *expression) {
 	  break;
 	}
 	case COL: {
-	  // TODO: should have multiple choices for scan operator. currently those executor does not override virtual methods
-	  for (join_type it = nestedLoopJoin; it < hashJoin; it = join_type(it + 1)) {
-		auto tmp = new seqScanExecutor;
-		out.push_back((executor *)tmp);
-	  }
+	  // TODO: initialize with enough data
+	  // Think: what if this col is from a joined view? Should have a in-memory data structure for tables?
+	  auto seqSE = new seqScanExecutor;
+	  out.push_back((executor *)seqSE);
+	  auto idxSE = new indexScanExecutor;
+	  out.push_back((executor *)idxSE);
+	  auto bmiSE = new bitMapIndexScanExecutor;
+	  out.push_back((executor *)bmiSE);
 	  break;
 	}
 	default: break;

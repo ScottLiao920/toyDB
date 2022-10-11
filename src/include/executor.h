@@ -23,7 +23,7 @@ class scanExecutor : protected executor {
   // abstract class for scan executors
  protected:
   rel *table_;
-  comparison_expr* qual_;
+  comparison_expr *qual_;
   bufferPoolManager *bpmgr_;
  public:
   void Init() override = 0;
@@ -31,7 +31,7 @@ class scanExecutor : protected executor {
   void SetTable(rel *);
   void SetBufferPoolManager(bufferPoolManager *);
   std::string GetTable() { return this->table_->GetName(); }
-  void SetQual(comparison_expr* qual) { this->qual_ = qual; }
+  void SetQual(comparison_expr *qual) { this->qual_ = qual; }
   void Next(void *dst) override = 0;
   void End() override = 0;
 };
@@ -51,17 +51,17 @@ class seqScanExecutor : protected scanExecutor {
 class indexScanExecutor : scanExecutor {
   RelID idx_table_;
  public:
-  void Init() override;
-  void Next(void *dst) override;
-  void End() override;
+  void Init() override {};
+  void Next(void *dst) override {};
+  void End() override {};
 };
 
 class bitMapIndexScanExecutor : scanExecutor {
   RelID idx_table_;
  public:
-  void Init() override;
-  void Next(void *dst) override;
-  void End() override;
+  void Init() override {};
+  void Next(void *dst) override {};
+  void End() override {};
 };
 
 class joinExecutor : executor {
@@ -71,19 +71,26 @@ class joinExecutor : executor {
   executor *right_child_;
  public:
   void Init() override = 0;
-
+  void Next(void *dst) override = 0;
+  void End() override = 0;
 };
 
 class nestedLoopJoinExecutor : joinExecutor {
-
+  void Init() override {};
+  void Next(void *dst) override {};
+  void End() override {};
 };
 
 class hashJoinExecutor : joinExecutor {
-
+  void Init() override {};
+  void Next(void *dst) override {};
+  void End() override {};
 };
 
 class mergeJoinExecutor : joinExecutor {
-
+  void Init() override {};
+  void Next(void *dst) override {};
+  void End() override {};
 };
 
 class aggregateExecutor : executor {
