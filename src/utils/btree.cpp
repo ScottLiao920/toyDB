@@ -1,3 +1,7 @@
+// Copyright (c) 2022.
+// Code written by Liao Chang (cliaosoc@nus.edu.sg)
+// Veni, vidi, vici
+
 //
 // Created by scorp on 9/23/2022.
 //

@@ -1,3 +1,7 @@
+// Copyright (c) 2022.
+// Code written by Liao Chang (cliaosoc@nus.edu.sg)
+// Veni, vidi, vici
+
 //
 // Created by liaoc on 9/20/22.
 //
