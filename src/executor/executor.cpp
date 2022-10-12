@@ -12,7 +12,50 @@
 #include "common.h"
 
 void executor::Init() {
+  std::memset(this->mem_context_, 0, EXEC_MEM);
   this->mode_ = volcano;
+  this->free_spaces_[this->mem_context_] = EXEC_MEM;
+}
+char *executor::talloc(size_t size) {
+  for (auto it : this->free_spaces_) {
+	if (it.second >= size) {
+	  this->free_spaces_.erase(it.first);
+	  this->free_spaces_.insert({it.first + size, it.second - size});
+	  return it.first;
+	}
+  }
+  return nullptr;
+}
+void executor::tfree(char *dst, size_t size) {
+  if (dst < this->mem_context_ || dst > this->mem_context_ + EXEC_MEM) {
+	std::cout << "Trying to free a memory chunk not in executor's context." << std::endl;
+	return;
+  }
+  auto tmp = this->allocated_spaces.find(dst);
+  if (tmp != this->allocated_spaces.cend()) {
+	this->allocated_spaces.erase(tmp);
+  } else {
+	std::cout << "Trying to free a memory chunk not allocated." << std::endl;
+  }
+  std::memset(dst, 0, size);
+  auto it = this->free_spaces_.find(dst + size);
+  if (it != this->free_spaces_.cend()) {
+	// There's a consecutive free memory chunk, update it to (dst, size+prev_size)
+	auto selected_chunk = this->free_spaces_.extract(it->first);
+	selected_chunk.key() = it->first - size;
+	this->free_spaces_.insert(std::move(selected_chunk));
+	this->free_spaces_[it->first - size] = it->second + size;
+  }
+  this->free_spaces_.insert({dst, size});
+}
+void executor::tfree(char *dst) {
+  auto it = this->allocated_spaces.find(dst);
+  if (it != this->allocated_spaces.cend()) {
+	std::cout << "Trying to free a memory chunk not allocated or not in executor's context." << std::endl;
+	return;
+  } else {
+	this->tfree(dst, this->allocated_spaces[dst]);
+  }
 }
 
 void scanExecutor::SetMode(execution_mode mode) {
@@ -32,6 +75,7 @@ void createExecutor::setStorageManager(storageManager *manager) {
 }
 
 void seqScanExecutor::Init(rel *tab, bufferPoolManager *manager, comparison_expr *qual) {
+  executor::Init();
   this->table_ = tab;
   this->bpmgr_ = manager;
   this->view_->SetName("Seq Scan View for Tab " + tab->GetName());
@@ -48,7 +92,7 @@ void seqScanExecutor::Next(void *dst) {
   std::vector<size_t> sizes = this->table_->GetColSizes();
   if (this->mode_ == volcano) {
 	// emit one at a time
-	char buf[len];
+	char *buf = talloc(len);
 	std::memset(buf, 0, len);
 	char *data_ptr = (char *)malloc(sizeof(char *));
 	this->mem_ptr_ += sizeof(char *);
@@ -62,12 +106,13 @@ void seqScanExecutor::Next(void *dst) {
 //	auto tmp = new toyDBTUPLE((char *)buf, len, sizes);
 //	((std::vector<toyDBTUPLE> *)dst)->at(0) = *tmp;
 	((std::vector<toyDBTUPLE> *)dst)->emplace(((std::vector<toyDBTUPLE> *)dst)->begin(), (char *)buf, len, sizes);
+	tfree(buf, len);
 //	((std::vector<toyDBTUPLE> *)dst)->emplace_back((char *)buf, len, sizes);
   } else {
 	// emit a batch at a time
 	for (auto i = 0; i < BATCH_SIZE; i++) {
-	  char buf[len * BATCH_SIZE];
-	  char *data_ptr = (char *)malloc(sizeof(char *));
+	  char *buf = talloc(len * BATCH_SIZE);
+	  char *data_ptr = talloc(sizeof(char *));
 	  this->mem_ptr_ += sizeof(char *);
 	  std::memcpy(&data_ptr, this->mem_ptr_, sizeof(char *));
 	  if (data_ptr == nullptr) {
@@ -77,6 +122,8 @@ void seqScanExecutor::Next(void *dst) {
 	  }
 	  std::memcpy(buf, data_ptr, len);
 	  ((std::vector<toyDBTUPLE> *)dst)->emplace_back((char *)buf, len, sizes);
+	  tfree(buf, len * BATCH_SIZE);
+	  tfree(data_ptr, sizeof(char *));
 	}
   }
 }
@@ -87,6 +134,7 @@ void indexExecutor::Init() {
   executor::Init();
 }
 void indexExecutor::Init(bufferPoolManager *bpmgr, rel *tab, size_t idx, index_type = btree) {
+  executor::Init();
   this->bpmgr_ = bpmgr;
   PhysicalPageID idx_page = bpmgr->stmgr_->addPage(); // allocate a new page for index
   bTree<int> tree(10);
@@ -126,6 +174,7 @@ void indexExecutor::Init(bufferPoolManager *bpmgr, rel *tab, size_t idx, index_t
   bpmgr->stmgr_->writePage(idx_page, &tree);
 }
 void selectExecutor::Init(std::vector<expr *> exprs, std::vector<executor *> children) {
+  executor::Init();
   this->targetList_ = exprs;
   this->children_ = std::move(children);
   std::cout << "    ";

@@ -16,6 +16,10 @@
 class executor {
   //abstract class for all the executors
  protected:
+  std::unordered_map<char *, size_t> free_spaces_;
+  std::unordered_map<char *, size_t> allocated_spaces;
+  char mem_context_[EXEC_MEM];
+  char *ptr = mem_context_;
   execution_mode mode_ = volcano;
   bufferPoolManager *bpmgr_;
   inMemoryView *view_; // save to disk if buffer pool is full
@@ -23,6 +27,9 @@ class executor {
   virtual void Init();
   virtual void Next(void *dst) = 0;
   virtual void End() = 0;
+  char *talloc(size_t);
+  void tfree(char *, size_t);
+  void tfree(char *);
 };
 
 class scanExecutor : protected executor {

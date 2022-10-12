@@ -214,5 +214,5 @@ bool heapPage::insert(const char *buf, size_t len) {
 inMemoryView::inMemoryView(bufferPoolManager *bpmgr) {
   this->id_ = std::time(nullptr);
   bpmgr->allocateInMemoryView(this->id_);
-  this->pages_ = std::vector<heapPage *>(1,);
+  this->pages_ = std::vector<heapPage *>(1,0);
 }
