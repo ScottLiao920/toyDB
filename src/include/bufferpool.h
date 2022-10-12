@@ -29,14 +29,26 @@ class heapPage {
 
   bool insert(const char *, size_t);
 
+  bool operator==(heapPage &rhs) { return rhs.id == this->id; }
+
 //    void remove(int);
+};
+
+class inMemoryView {
+ public:
+  std::vector<heapPage *> pages_;
+  std::string name_;
+  RelID id_;
+  std::vector<PhysicalPageID> psy_pages_;
+  inMemoryView(bufferPoolManager *);
+  void SetName(const std::string &name) { this->name_ = name; };
 };
 
 class bufferPoolManager {
  private:
   std::unordered_map<heapPage *, PhysicalPageID> page_table_;
   std::vector<heapPage> pages_;
-  std::vector<short> pin_cnt_;
+  std::vector<size_t> pin_cnt_;
   std::vector<bool> is_dirty_;
   size_t no_pages_ = BUFFER_POOL_SIZE;
 
@@ -45,11 +57,19 @@ class bufferPoolManager {
 
   heapPage *findPage(PhysicalPageID);
 
-  void insertToFrame(int, const char *, size_t); // insert content of size size_t pointed by const char * to frame int
+  size_t findPage(heapPage *);
+
+  std::tuple<heapPage *, size_t> nextFreePage();
+
+  void insertToFrame(int,
+					 const char *,
+					 size_t); // insert content of user-provided length pointed by const char * to frame int
 
   void insertToFrame(heapPage *, const char *, size_t);
 
   void readFromDisk(PhysicalPageID);
+
+  void allocateInMemoryView(RelID);
 
   void writeToDisk(PhysicalPageID, size_t);
 

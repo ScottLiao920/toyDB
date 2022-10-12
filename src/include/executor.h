@@ -18,9 +18,9 @@ class executor {
  protected:
   execution_mode mode_ = volcano;
   bufferPoolManager *bpmgr_;
-  rel *view_;
+  inMemoryView *view_; // save to disk if buffer pool is full
  public:
-  virtual void Init() = 0;
+  virtual void Init();
   virtual void Next(void *dst) = 0;
   virtual void End() = 0;
 };
@@ -48,7 +48,7 @@ class seqScanExecutor : protected scanExecutor {
   std::vector<PhysicalPageID> pages_;
  public:
   void Init() override {};
-  void Init(rel *, bufferPoolManager *, comparison_expr);
+  void Init(rel *, bufferPoolManager *, comparison_expr *);
   void Next(void *dst) override;
   void End() override;
 };

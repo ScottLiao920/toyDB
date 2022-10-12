@@ -66,7 +66,7 @@ int main() {
 	char buf[sizeof(int) + 4];
 	std::memset(buf, 0, 4 + 4);
 	std::memcpy(buf, &id, sizeof(int));
-	std::memcpy(buf+sizeof(int), tmp_string.c_str(), 4);
+	std::memcpy(buf + sizeof(int), tmp_string.c_str(), 4);
 	table1.add_row(sizeof(int) + 4);
 	table1.rows_.back().pages_.push_back(1);
 	table1.update_row(&bpmgr, i, buf);
@@ -74,7 +74,7 @@ int main() {
   }
   comparison_expr qual;
   seqScanExecutor seq_scan_executor;
-  seq_scan_executor.Init(&table1, &bpmgr, qual);
+  seq_scan_executor.Init(&table1, &bpmgr, &qual);
   for (unsigned int i = 0; i < 100; ++i) {
 	std::vector<toyDBTUPLE> tup(BATCH_SIZE);
 	seq_scan_executor.Next(&tup);

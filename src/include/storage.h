@@ -99,6 +99,9 @@ class row {
 };
 
 class rel {
+  /*
+   * This class serve as a class for both in-memory view and on-disk tables.
+   */
   // CAUTION: rethink about cols_ and rows_. Does one really need a vector of rows in a row store?
   RelID relId_;
   std::string name_;

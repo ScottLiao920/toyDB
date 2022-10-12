@@ -164,10 +164,10 @@ rel::rel() {
   this->relId_ = std::time(nullptr);
   table_schema.TableID2Table[this->relId_] = this;
 }
-rel::rel(const std::string & name) {
+rel::rel(const std::string &name) {
   this->relId_ = std::time(nullptr);
   table_schema.TableID2Table[this->relId_] = this;
-  this->set_name_(std::move(name));
+  this->set_name_(name);
 }
 
 row::row(size_t size, RelID par_table) {

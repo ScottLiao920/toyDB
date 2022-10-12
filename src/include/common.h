@@ -24,6 +24,7 @@
 typedef unsigned int HEAP_PAGE_ID;
 typedef unsigned int PhysicalPageID;
 #define INVALID_PHYSICAL_PAGE_ID 0xFFFFFFFF
+#define INMEMORY_PAGE_ID 0xFFFFFFFE
 typedef unsigned int RelID;
 typedef unsigned int RowID;
 typedef unsigned int ColID;
