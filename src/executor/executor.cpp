@@ -6,6 +6,8 @@
 // Created by scorp on 9/22/2022.
 //
 #include "executor.h"
+
+#include <utility>
 #include "btree.h"
 #include "common.h"
 
@@ -124,7 +126,7 @@ void indexExecutor::Init(bufferPoolManager *bpmgr, rel *tab, size_t idx, index_t
 }
 void selectExecutor::Init(std::vector<expr *> exprs, std::vector<executor *> children) {
   this->targetList_ = exprs;
-  this->children_ = children;
+  this->children_ = std::move(children);
   std::cout << "    ";
   for (auto it : exprs) {
 	std::cout << "|" << it->alias;
@@ -146,7 +148,7 @@ void selectExecutor::Next(void *dst) {
 		// TODO: validate targetList on tmp_buf here
 		char tmp_buf[col_size];
 		std::memcpy(tmp_buf, buf->cbegin()->content_ + offset, col_size);
-		switch (type_schema.typeID2type[table1.cols_[col_id].typeid_]) {
+		switch (1) {//type_schema.typeID2type[table1.cols_[col_id].typeid_]) {
 		  case (1): {
 			std::cout << "|" << (int)*tmp_buf;
 			break;

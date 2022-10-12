@@ -8,6 +8,7 @@
 #include "parser.h"
 #include "executor.h"
 #include "btree.h"
+#include "type.h"
 
 void testBTree() {
   bTree<int> t(3);
@@ -83,7 +84,24 @@ int main() {
 	  // TODO: validate targetList on tmp_buf here
 	  char tmp_buf[col_size];
 	  std::memcpy(tmp_buf, tup.cbegin()->content_ + offset, col_size);
-
+	  switch (type_schema.typeID2type[table1.cols_[col_id].typeid_]) {
+		case (1): {
+		  std::cout << "|" << (int)*tmp_buf;
+		  break;
+		}
+		case (2): {
+		  std::cout << "|" << (float)*tmp_buf;
+		  break;
+		}
+		case (3): {
+		  std::cout << "|" << (size_t)*tmp_buf;
+		  break;
+		}
+		case (4): {
+		  std::cout << "|" << *tmp_buf;
+		  break;
+		}
+	  }
 	  offset += col_size;
 	  ++col_id;
 	}

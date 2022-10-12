@@ -17,6 +17,8 @@ class executor {
   //abstract class for all the executors
  protected:
   execution_mode mode_ = volcano;
+  bufferPoolManager *bpmgr_;
+  rel *view_;
  public:
   virtual void Init() = 0;
   virtual void Next(void *dst) = 0;
@@ -28,7 +30,6 @@ class scanExecutor : protected executor {
  protected:
   rel *table_;
   comparison_expr *qual_;
-  bufferPoolManager *bpmgr_;
  public:
   void Init() override = 0;
   void SetMode(execution_mode);
@@ -84,7 +85,7 @@ class nestedLoopJoinExecutor : protected joinExecutor {
   void Init() override {};
   void SetLeft(executor *left) { this->left_child_ = left; };
   void SetRight(executor *right) { this->right_child_ = right; };
-  void SetPredicate(comparison_expr* tmp) { this->pred_ = tmp; }
+  void SetPredicate(comparison_expr *tmp) { this->pred_ = tmp; }
   void Next(void *dst) override;
   void End() override {};
 };

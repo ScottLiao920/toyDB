@@ -10,6 +10,7 @@
 #include <utility>
 #include <ctime>
 #include "storage.h"
+#include "bufferpool.h"
 #include "schema.h"
 
 physicalPage::physicalPage(PhysicalPageID id) {
@@ -68,6 +69,7 @@ column::column(std::string inp_name, size_t size, RelID par_table, const std::ty
 
 void rel::set_name_(std::string inp) {
   this->name_ = std::move(inp);
+  table_schema.TableName2Table[this->name_] = this;
 }
 
 void rel::add_rows(std::vector<row> inp_rows) {
@@ -161,6 +163,11 @@ std::vector<size_t> rel::GetColSizes() {
 rel::rel() {
   this->relId_ = std::time(nullptr);
   table_schema.TableID2Table[this->relId_] = this;
+}
+rel::rel(const std::string & name) {
+  this->relId_ = std::time(nullptr);
+  table_schema.TableID2Table[this->relId_] = this;
+  this->set_name_(std::move(name));
 }
 
 row::row(size_t size, RelID par_table) {
