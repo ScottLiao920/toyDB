@@ -6,6 +6,7 @@
 #include <utility>
 #include <ctime>
 #include "storage.h"
+#include "schema.h"
 
 physicalPage::physicalPage(PhysicalPageID id) {
   std::ofstream cur_page_file;
@@ -152,6 +153,10 @@ std::vector<size_t> rel::GetColSizes() {
 	out.push_back(it.getSize());
   }
   return out;
+}
+rel::rel() {
+  this->relId_ = std::time(nullptr);
+  table_schema.TableID2Table[this->relId_] = this;
 }
 
 row::row(size_t size, RelID par_table) {

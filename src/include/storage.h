@@ -103,7 +103,7 @@ class rel {
   std::vector<column> cols_;
   std::vector<row> rows_;
 
-  rel() = default;
+  rel();
 //  rel(std::vector<std::toyDBTUPLE(size_t, std::string)>);
   storageMethod getStorageMethod() { return this->storage_method_; };
   bool set_scheme_(storageMethod);

@@ -16,6 +16,7 @@
 #include <vector>
 #include <numeric>
 #include "config.h"
+#include "type.h"
 
 typedef unsigned int HEAP_PAGE_ID;
 typedef unsigned int PhysicalPageID;

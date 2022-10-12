@@ -56,11 +56,12 @@ int main() {
   table2.add_column("relId_", sizeof(int), typeid(int));
   table2.add_column("col2", sizeof(float), typeid(float));
   int id = 0;
+  std::string tmp_string("A");
   for (unsigned int i = 0; i < 100; ++i) {
 	char buf[sizeof(int) + 4];
 	std::memset(buf, 0, 4 + 4);
 	std::memcpy(buf, &id, sizeof(int));
-	buf[sizeof(int) + 2] = 'A';
+	std::memcpy(buf+sizeof(int), tmp_string.c_str(), 4);
 	table1.add_row(sizeof(int) + 4);
 	table1.rows_.back().pages_.push_back(1);
 	table1.update_row(&bpmgr, i, buf);
@@ -72,10 +73,17 @@ int main() {
   for (unsigned int i = 0; i < 100; ++i) {
 	std::vector<toyDBTUPLE> tup(BATCH_SIZE);
 	seq_scan_executor.Next(&tup);
-	std::cout << (int)*tup[0].content_ << (char)(tup[0].content_[sizeof(int) + 2]) << std::endl;
-//	for (auto it : tup) {
-//	  delete it;
-//	}
+	size_t offset = 0;
+	size_t col_id = 0;
+	for (auto col_size : tup.cbegin()->sizes_) {
+	  // TODO: validate targetList on tmp_buf here
+	  char tmp_buf[col_size];
+	  std::memcpy(tmp_buf, tup.cbegin()->content_ + offset, col_size);
+
+	  offset += col_size;
+	  ++col_id;
+	}
+	std::cout << std::endl;
   }
   seq_scan_executor.End();
 //  testBTree();

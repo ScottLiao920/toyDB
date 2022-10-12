@@ -3,6 +3,7 @@
 //
 #include "executor.h"
 #include "btree.h"
+#include "common.h"
 
 void executor::Init() {
   this->mode_ = volcano;
@@ -136,7 +137,31 @@ void selectExecutor::Next(void *dst) {
 	  continue;
 	}
 	if (this->mode_ == volcano) {
-	  std::cout << "|" << buf->cbegin()->content_;
+	  size_t offset = 0;
+	  for (auto col_size : buf->cbegin()->sizes_) {
+		// TODO: validate targetList on tmp_buf here
+		char tmp_buf[col_size];
+		std::memcpy(tmp_buf, buf->cbegin()->content_ + offset, col_size);
+		switch (type_schema.typeID2type[table1.cols_[col_id].typeid_]) {
+		  case (1): {
+			std::cout << "|" << (int)*tmp_buf;
+			break;
+		  }
+		  case (2): {
+			std::cout << "|" << (float)*tmp_buf;
+			break;
+		  }
+		  case (3): {
+			std::cout << "|" << (size_t)*tmp_buf;
+			break;
+		  }
+		  case (4): {
+			std::cout << "|" << *tmp_buf;
+			break;
+		  }
+		}
+		offset += col_size;
+	  }
 	} else {
 	  //TODO: For batched execution
 	}
