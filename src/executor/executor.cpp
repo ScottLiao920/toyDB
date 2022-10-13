@@ -78,7 +78,7 @@ void seqScanExecutor::Init(rel *tab, bufferPoolManager *manager, comparison_expr
   executor::Init();
   this->table_ = tab;
   this->bpmgr_ = manager;
-  this->view_->SetName("Seq Scan View for Tab " + tab->GetName());
+//  this->view_->SetName("Seq Scan View for Tab " + tab->GetName());
   this->qual_ = qual;
   this->cnt_ = 0;
   this->pages_ = this->table_->get_location();
@@ -94,7 +94,7 @@ void seqScanExecutor::Next(void *dst) {
 	// emit one at a time
 	char *buf = talloc(len);
 	std::memset(buf, 0, len);
-	char *data_ptr = (char *)malloc(sizeof(char *));
+	char *data_ptr = talloc(sizeof(char *));
 	this->mem_ptr_ += sizeof(char *);
 	std::memcpy(&data_ptr, this->mem_ptr_, sizeof(char *));
 	if (data_ptr == nullptr) {
@@ -106,7 +106,8 @@ void seqScanExecutor::Next(void *dst) {
 //	auto tmp = new toyDBTUPLE((char *)buf, len, sizes);
 //	((std::vector<toyDBTUPLE> *)dst)->at(0) = *tmp;
 	((std::vector<toyDBTUPLE> *)dst)->emplace(((std::vector<toyDBTUPLE> *)dst)->begin(), (char *)buf, len, sizes);
-	tfree(buf, len);
+	tfree(buf);
+//	tfree(data_ptr);
 //	((std::vector<toyDBTUPLE> *)dst)->emplace_back((char *)buf, len, sizes);
   } else {
 	// emit a batch at a time
@@ -160,14 +161,17 @@ void indexExecutor::Init(bufferPoolManager *bpmgr, rel *tab, size_t idx, index_t
 		  cnt = 0;
 		  prev = it.pages_[0];
 		}
-		char *data_ptr = (char *)malloc(sizeof(char *));
+		char *data_ptr = talloc(sizeof(char *));
 		std::memcpy(&data_ptr, cur_heap_page->content + idx * (sizeof(char *)), sizeof(char *));
-		char *prev_data_ptr = (char *)malloc(sizeof(char *));
+		char *prev_data_ptr = talloc(sizeof(char *));
 		std::memcpy(&prev_data_ptr, cur_heap_page->content + (idx - 1) * (sizeof(char *)), sizeof(char *));
 		size_t len = prev_data_ptr - data_ptr;
-		char *val = (char *)std::malloc(len);
+		char *val = talloc(len);
 		std::memcpy(val, data_ptr, len);
 		tree.insert(*val, std::tuple(prev, cnt));
+		tfree(data_ptr);
+		tfree(prev_data_ptr);
+		tfree(val);
 	  }
 	}
   }

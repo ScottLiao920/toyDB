@@ -44,14 +44,14 @@ heapPage *bufferPoolManager::evict() {
 	}
 	this->writeToDisk(this->page_table_[&this->pages_[idx]], idx);
   }
-  heapPage cleanPage = this->pages_[idx];
-  std::memset(cleanPage.content, 0, HEAP_SIZE);
-  cleanPage.timestamp = std::time(nullptr);
-  cleanPage.data_ptr = cleanPage.content + HEAP_SIZE;
-  cleanPage.data_ptr = cleanPage.content;
-  cleanPage.data_cnt = 0;
+  heapPage *cleanPage = &this->pages_[idx];
+  std::memset(cleanPage->content, 0, HEAP_SIZE);
+  cleanPage->timestamp = std::time(nullptr);
+  cleanPage->data_ptr = cleanPage->content + HEAP_SIZE;
+  cleanPage->data_ptr = cleanPage->content;
+  cleanPage->data_cnt = 0;
   this->pin_cnt_[idx] = 0;
-  this->page_table_[&cleanPage] = INVALID_PHYSICAL_PAGE_ID;
+  this->page_table_[cleanPage] = INVALID_PHYSICAL_PAGE_ID;
   return &this->pages_[idx];
 }
 
@@ -69,6 +69,7 @@ void bufferPoolManager::readFromDisk(PhysicalPageID psy_id) {
 	curPage->idx_ptr = curPage->content;
 	this->pin_cnt_[cnt] += 1;
 	this->is_dirty_[cnt] = false;
+	return;
   }
   heapPage *cleanedPage = evict();
   this->stmgr_->readPage(psy_id, cleanedPage->content);
@@ -155,7 +156,7 @@ void bufferPoolManager::writeToDisk(PhysicalPageID psy_id, heapPage *page) {
 std::tuple<heapPage *, size_t> bufferPoolManager::nextFreePage() {
   size_t cnt = 0;
   for (auto it : this->page_table_) {
-	if (it.second != INVALID_PHYSICAL_PAGE_ID and it.second != INMEMORY_PAGE_ID) {
+	if (it.second == INVALID_PHYSICAL_PAGE_ID) {
 	  return {it.first, cnt};
 	}
 	++cnt;
@@ -214,5 +215,5 @@ bool heapPage::insert(const char *buf, size_t len) {
 inMemoryView::inMemoryView(bufferPoolManager *bpmgr) {
   this->id_ = std::time(nullptr);
   bpmgr->allocateInMemoryView(this->id_);
-  this->pages_ = std::vector<heapPage *>(1,0);
+  this->pages_ = std::vector<heapPage *>(1, 0);
 }

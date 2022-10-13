@@ -22,7 +22,7 @@ class executor {
   char *ptr = mem_context_;
   execution_mode mode_ = volcano;
   bufferPoolManager *bpmgr_;
-  inMemoryView *view_; // save to disk if buffer pool is full
+//  inMemoryView *view_; // save to disk if buffer pool is full
  public:
   virtual void Init();
   virtual void Next(void *dst) = 0;

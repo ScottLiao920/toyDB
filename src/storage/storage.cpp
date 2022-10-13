@@ -21,7 +21,6 @@ physicalPage::physicalPage(PhysicalPageID id) {
   this->file_path_ = file_name;
   cur_page_file.open(file_name, std::ios::out);
   cur_page_file.close();
-  this->cur_id_ += 1;
 }
 
 void physicalPage::readPage(char *dst) {
@@ -178,7 +177,7 @@ row::row(size_t size, RelID par_table) {
 
 void row::insert(bufferPoolManager *bpmgr, char *content) {
   if (this->pages_.empty()) {
-	this->pages_.push_back(bpmgr->stmgr_->addPage() - 1);
+	this->pages_.push_back(bpmgr->stmgr_->addPage());
   }
   heapPage *cur_frame = bpmgr->findPage(this->pages_.back());
   if (cur_frame == nullptr) {

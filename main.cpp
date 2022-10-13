@@ -68,7 +68,7 @@ int main() {
 	std::memcpy(buf, &id, sizeof(int));
 	std::memcpy(buf + sizeof(int), tmp_string.c_str(), 4);
 	table1.add_row(sizeof(int) + 4);
-	table1.rows_.back().pages_.push_back(1);
+	table1.rows_.back().pages_.push_back(0);
 	table1.update_row(&bpmgr, i, buf);
 	++id;
   }
