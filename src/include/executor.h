@@ -36,7 +36,7 @@ class scanExecutor : protected executor {
   // abstract class for scan executors
  protected:
   rel *table_;
-  comparison_expr *qual_;
+  comparison_expr *qual_; // Should consider multiple predicate on a single executor
  public:
   void Init() override = 0;
   void SetMode(execution_mode);

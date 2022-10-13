@@ -12,7 +12,7 @@
 #include "storage.h"
 #include "common.h"
 #include "regex"
-#include <boost/algorithm/string.hpp>
+//#include <boost/algorithm/string.hpp>
 
 class expr {
  public:
@@ -25,17 +25,18 @@ class expr {
   ~expr();
 };
 
-class aggr_expr : expr {
+class aggr_expr : public expr {
  public:
   aggr aggr_type;
 };
 
-class comparison_expr : expr {
+class comparison_expr : public expr {
  public:
   comparision comparision_type;
 
   template<typename T>
   bool compare(T, T);
+  bool compare(const char *, const char *, size_t);
 };
 
 class queryTree {

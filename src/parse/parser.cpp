@@ -7,6 +7,7 @@
 //
 
 #include "parser.h"
+#include "type.h"
 
 queryTree::queryTree() {
   this->command_ = INVALID_COMMAND;
@@ -15,8 +16,8 @@ queryTree::queryTree() {
 }
 
 void parser::parse(const std::string &sql_string) {
-  std::string upp_sql;
-  upp_sql = boost::to_upper_copy(sql_string);
+  std::string upp_sql = sql_string;
+  std::transform(upp_sql.begin(), upp_sql.end(), upp_sql.begin(), ::toupper);
   if (upp_sql.compare(0, 6, "SELECT") == 0) {
 	this->stmt_tree_.command_ = SELECT;
   } else if (upp_sql.compare(0, 6, "INSERT") == 0) {
@@ -161,5 +162,33 @@ bool comparison_expr::compare(T lhs, T rhs) {
 	case ngt:return (lhs <= rhs);
 	case nlt:return (lhs >= rhs);
 	case NO_COMP:return true;
+  }
+}
+bool comparison_expr::compare(const char *lhs_ptr, const char *rhs_ptr, size_t type_id) {
+  switch (type_schema.typeID2type[type_id]) {
+	case (1): {
+	  int lhs = (int)*lhs_ptr;
+	  int rhs = atoi(rhs_ptr);
+	  return this->compare(lhs, rhs);
+	}
+	case (2): {
+	  float lhs = (float)*lhs_ptr;
+	  float rhs = atof(rhs_ptr);
+	  return this->compare(lhs, rhs);
+	}
+	case (3): {
+	  size_t lhs = (size_t)*lhs_ptr;
+	  size_t rhs = atol(rhs_ptr);
+	  return this->compare(lhs, rhs);
+	}
+	case (4): {
+	  std::string lhs(lhs_ptr);
+	  std::string rhs(rhs_ptr);
+	  return this->compare(lhs, rhs);
+	}
+	default: {
+	  std::cout << "Type not supported." << std::endl;
+	  return false;
+	}
   }
 }

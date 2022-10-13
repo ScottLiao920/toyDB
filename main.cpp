@@ -73,15 +73,23 @@ int main() {
 	++id;
   }
   comparison_expr qual;
+  qual.comparision_type = comparision::ngt;
+  qual.data_srcs.emplace_back("RELID_");
+  qual.data_srcs.emplace_back("10");
   seqScanExecutor seq_scan_executor;
   seq_scan_executor.Init(&table1, &bpmgr, &qual);
   for (unsigned int i = 0; i < 100; ++i) {
 	std::vector<toyDBTUPLE> tup(BATCH_SIZE);
 	seq_scan_executor.Next(&tup);
+	if (tup[0].content_ == nullptr) {
+	  continue;
+	}
 	size_t offset = 0;
 	size_t col_id = 0;
 	for (auto col_size : tup.cbegin()->sizes_) {
-	  // TODO: validate targetList on tmp_buf here
+	  if (col_size == 0) {
+		continue;
+	  }
 	  char tmp_buf[col_size];
 	  std::memcpy(tmp_buf, tup.cbegin()->content_ + offset, col_size);
 	  switch (type_schema.typeID2type[table1.cols_[col_id].typeid_]) {

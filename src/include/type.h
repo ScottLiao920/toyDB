@@ -21,6 +21,6 @@ class TypeSchema {
   }
 };
 
-TypeSchema type_schema;
+static TypeSchema type_schema;
 
 #endif //TOYDB_SRC_INCLUDE_TYPE_H_

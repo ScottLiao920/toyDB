@@ -90,6 +90,16 @@ void seqScanExecutor::Init(rel *tab, bufferPoolManager *manager, comparison_expr
 void seqScanExecutor::Next(void *dst) {
   size_t len = this->table_->get_tuple_size();
   std::vector<size_t> sizes = this->table_->GetColSizes();
+  size_t col_idx = 0;
+  for (auto it : this->table_->cols_) {
+	std::string upper_name = it.getName();
+	std::transform(upper_name.begin(), upper_name.end(), upper_name.begin(), ::toupper);
+	if (this->qual_->data_srcs[0] == upper_name) {
+	  break;
+	}
+	col_idx += 1;
+  }
+  char *rhs = (char *)this->qual_->data_srcs[1].c_str();
   if (this->mode_ == volcano) {
 	// emit one at a time
 	char *buf = talloc(len);
@@ -103,9 +113,20 @@ void seqScanExecutor::Next(void *dst) {
 	  data_ptr -= len;
 	}
 	std::memcpy(buf, data_ptr, len);
-//	auto tmp = new toyDBTUPLE((char *)buf, len, sizes);
+	toyDBTUPLE tmp((char *)buf, len, sizes);
+	// Verify comparison expression
+	size_t offset = 0, cnt = 0;
+	for (auto it : tmp.sizes_) {
+	  if (cnt == col_idx
+		  and this->qual_->compare((char *)buf + offset, (char *)rhs, this->table_->cols_[col_idx].typeid_)) {
+		((std::vector<toyDBTUPLE> *)dst)->at(0) = tmp;
+		break;
+	  }
+	  cnt += 1;
+	  offset += it;
+	}
 //	((std::vector<toyDBTUPLE> *)dst)->at(0) = *tmp;
-	((std::vector<toyDBTUPLE> *)dst)->emplace(((std::vector<toyDBTUPLE> *)dst)->begin(), (char *)buf, len, sizes);
+//	((std::vector<toyDBTUPLE> *)dst)->emplace(((std::vector<toyDBTUPLE> *)dst)->begin(), (char *)buf, len, sizes);
 	tfree(buf);
 //	tfree(data_ptr);
 //	((std::vector<toyDBTUPLE> *)dst)->emplace_back((char *)buf, len, sizes);
@@ -200,6 +221,10 @@ void selectExecutor::Next(void *dst) {
 	  size_t offset = 0;
 	  for (auto col_size : buf->cbegin()->sizes_) {
 		// TODO: validate targetList on tmp_buf here
+		if (col_size == 0) {
+		  // skip the first empty entry
+		  continue;
+		}
 		char tmp_buf[col_size];
 		std::memcpy(tmp_buf, buf->cbegin()->content_ + offset, col_size);
 		switch (1) {//type_schema.typeID2type[table1.cols_[col_id].typeid_]) {
