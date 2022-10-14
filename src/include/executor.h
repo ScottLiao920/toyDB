@@ -26,13 +26,13 @@ class executor {
  public:
   virtual void Init();
   virtual void Next(void *dst) = 0;
-  virtual void End() = 0;
+  virtual void End();
   char *talloc(size_t);
   void tfree(char *, size_t);
   void tfree(char *);
 };
 
-class scanExecutor : protected executor {
+class scanExecutor : public executor {
   // abstract class for scan executors
  protected:
   rel *table_;
@@ -48,7 +48,7 @@ class scanExecutor : protected executor {
   void End() override = 0;
 };
 
-class seqScanExecutor : protected scanExecutor {
+class seqScanExecutor : public scanExecutor {
  private:
   unsigned int cnt_;
   char *mem_ptr_ = nullptr;
@@ -57,6 +57,7 @@ class seqScanExecutor : protected scanExecutor {
   void Init() override {};
   void Init(rel *, bufferPoolManager *, comparison_expr *);
   void Next(void *dst) override;
+  void Reset();
   void End() override;
 };
 
@@ -91,12 +92,18 @@ class joinExecutor : protected executor {
 };
 
 class nestedLoopJoinExecutor : protected joinExecutor {
-  void Init() override {};
+ private:
+  std::vector<toyDBTUPLE> curLeftBatch_;
+  std::vector<toyDBTUPLE>::iterator curLeftTuple_;
+  std::vector<toyDBTUPLE> curRightBatch_;
+  std::vector<toyDBTUPLE>::iterator curRightTuple_;
+ public:
+  void Init() override;
   void SetLeft(executor *left) { this->left_child_ = left; };
   void SetRight(executor *right) { this->right_child_ = right; };
   void SetPredicate(comparison_expr *tmp) { this->pred_ = tmp; }
   void Next(void *dst) override;
-  void End() override {};
+  void End() override;
 };
 
 class hashJoinExecutor : joinExecutor {
@@ -161,7 +168,7 @@ class selectExecutor : executor {
   std::vector<executor *> children_;
   size_t cnt_ = 0;
  public:
-  void Init() override {};
+  void Init() override;
   void addChild(executor *exec) { this->children_.push_back(exec); };
   void Init(std::vector<expr *>, std::vector<executor *>);
   void Next(void *) override;

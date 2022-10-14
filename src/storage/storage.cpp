@@ -13,6 +13,7 @@
 #include "bufferpool.h"
 #include "schema.h"
 
+TableSchema table_schema;
 physicalPage::physicalPage(PhysicalPageID id) {
   std::ofstream cur_page_file;
   this->cur_id_ = id;
@@ -69,6 +70,7 @@ column::column(std::string inp_name, size_t size, RelID par_table, const std::ty
 void rel::set_name_(std::string inp) {
   this->name_ = std::move(inp);
   table_schema.TableName2Table[this->name_] = this;
+  table_schema.Table2IDName[this] = std::tie(this->relId_, inp);
 }
 
 void rel::add_rows(std::vector<row> inp_rows) {
@@ -162,10 +164,12 @@ std::vector<size_t> rel::GetColSizes() {
 rel::rel() {
   this->relId_ = std::time(nullptr);
   table_schema.TableID2Table[this->relId_] = this;
+  table_schema.Table2IDName[this] = std::tie(this->relId_, "No Name");
 }
 rel::rel(const std::string &name) {
   this->relId_ = std::time(nullptr);
   table_schema.TableID2Table[this->relId_] = this;
+  table_schema.Table2IDName[this] = std::tie(this->relId_, "No Name");
   this->set_name_(name);
 }
 size_t rel::GetOffset(const std::string &col_name) {
@@ -194,6 +198,15 @@ size_t rel::GetColIdx(const std::string &col_name) {
   }
   return col_idx;
 }
+std::vector<size_t> rel::GetTypeIDs() {
+  std::vector<size_t> out(this->cols_.size());
+  size_t cnt = 0;
+  for (const auto &it : this->cols_) {
+	out.at(cnt) = it.typeid_;
+	++cnt;
+  }
+  return out;
+}
 
 row::row(size_t size, RelID par_table) {
   this->id_ = std::time(nullptr);
@@ -214,13 +227,12 @@ void row::insert(bufferPoolManager *bpmgr, char *content) {
   bpmgr->insertToFrame(cur_frame, content, this->width_);
   bpmgr->writeToDisk(this->pages_.back(), cur_frame);
 }
-toyDBTUPLE::toyDBTUPLE(char *buf, size_t len, std::vector<size_t> sizes) {
-  if (this->content_ == nullptr) {
-	this->content_ = (char *)new char[len];
-  }
+toyDBTUPLE::toyDBTUPLE(char *buf, size_t len, std::vector<size_t> sizes, std::vector<size_t> type_ids) {
+  this->content_ = (char *)new char[len];
   std::memcpy(this->content_, buf, len);
   this->size_ = len;
   this->sizes_ = std::vector<size_t>(std::move(sizes));
+  this->type_ids_ = std::vector<size_t>(std::move(type_ids));
   if (std::accumulate(this->sizes_.cbegin(), this->sizes_.cend(), (size_t)0) != this->size_) {
 	std::cout << "Check size!" << std::endl;
   }
@@ -246,6 +258,9 @@ toyDBTUPLE &toyDBTUPLE::operator=(const toyDBTUPLE &ref) {
 	this->row_ = ref.row_;
 	for (auto it : ref.sizes_) {
 	  this->sizes_.push_back(it);
+	}
+	for (auto it : ref.type_ids_) {
+	  this->type_ids_.push_back(it);
 	}
 //	this->sizes_ = std::vector<size_t>(ref.sizes_);
   }

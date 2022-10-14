@@ -165,6 +165,8 @@ bool comparison_expr::compare(T lhs, T rhs) {
   }
 }
 bool comparison_expr::compare(const char *lhs_ptr, const char *rhs_ptr, size_t type_id) {
+//  std::cout << "Comparing " << (int)*lhs_ptr << " from left side with "
+//			<< (int)*rhs_ptr << " from right side" << std::endl;
   switch (type_schema.typeID2type[type_id]) {
 	case (1): {
 	  int lhs = (int)*lhs_ptr;

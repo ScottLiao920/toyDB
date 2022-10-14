@@ -34,6 +34,7 @@ void testBTree() {
 int main() {
   storageManager stmgr;
   stmgr.addPage();
+  stmgr.addPage();
   bufferPoolManager bpmgr(&stmgr);
 //  const char *tmp = "hello world";
 //  char *dst = (char *)malloc(8192);
@@ -59,7 +60,7 @@ int main() {
   table1.add_column("relId_", sizeof(int), typeid(int));
   table1.add_column("content", 4, typeid(std::string));
   table2.add_column("relId_", sizeof(int), typeid(int));
-  table2.add_column("col2", sizeof(float), typeid(float));
+  table2.add_column("content", 4, typeid(std::string));
   int id = 0;
   std::string tmp_string("A");
   for (unsigned int i = 0; i < 100; ++i) {
@@ -68,19 +69,41 @@ int main() {
 	std::memcpy(buf, &id, sizeof(int));
 	std::memcpy(buf + sizeof(int), tmp_string.c_str(), 4);
 	table1.add_row(sizeof(int) + 4);
-	table1.rows_.back().pages_.push_back(0);
+	table1.rows_.back().pages_.push_back(0); // store table1 in physical page id 0
 	table1.update_row(&bpmgr, i, buf);
+	++id;
+  }
+  id = 0;
+  tmp_string.push_back('B');
+  for (unsigned int i = 0; i < 100; ++i) {
+	char buf[sizeof(int) + 4];
+	std::memset(buf, 0, 4 + 4);
+	std::memcpy(buf, &id, sizeof(int));
+	std::memcpy(buf + sizeof(int), tmp_string.c_str(), 4);
+	table2.add_row(sizeof(int) + 4);
+	table2.rows_.back().pages_.push_back(1);
+	table2.update_row(&bpmgr, i, buf); // store table1 in physical page id 1
 	++id;
   }
   comparison_expr qual;
   qual.comparision_type = comparision::ngt;
   qual.data_srcs.emplace_back("RELID_");
-  qual.data_srcs.emplace_back("10");
-  seqScanExecutor seq_scan_executor;
-  seq_scan_executor.Init(&table1, &bpmgr, &qual);
+  qual.data_srcs.emplace_back("50");
+  seqScanExecutor seq_scan_executor_tab1, seq_scan_executor_tab2;
+  seq_scan_executor_tab1.Init(&table1, &bpmgr, &qual);
+  seq_scan_executor_tab2.Init(&table2, &bpmgr, &qual);
+  nestedLoopJoinExecutor nested_loop_join_executor;
+  nested_loop_join_executor.SetLeft(&seq_scan_executor_tab1);
+  nested_loop_join_executor.SetRight(&seq_scan_executor_tab2);
+  nested_loop_join_executor.Init();
+  comparison_expr join_predicate;
+  join_predicate.comparision_type = comparision::equal;
+  join_predicate.data_srcs.emplace_back("A.RELID_");
+  join_predicate.data_srcs.emplace_back("B.RELID_");
+  nested_loop_join_executor.SetPredicate(&join_predicate);
   for (unsigned int i = 0; i < 100; ++i) {
 	std::vector<toyDBTUPLE> tup(BATCH_SIZE);
-	seq_scan_executor.Next(&tup);
+	nested_loop_join_executor.Next(&tup);
 	if (tup[0].content_ == nullptr) {
 	  continue;
 	}
@@ -92,7 +115,7 @@ int main() {
 	  }
 	  char tmp_buf[col_size];
 	  std::memcpy(tmp_buf, tup.cbegin()->content_ + offset, col_size);
-	  switch (type_schema.typeID2type[table1.cols_[col_id].typeid_]) {
+	  switch (type_schema.typeID2type[tup.begin()->type_ids_[col_id]]) {
 		case (1): {
 		  std::cout << "|" << (int)*tmp_buf;
 		  break;
@@ -106,7 +129,7 @@ int main() {
 		  break;
 		}
 		case (4): {
-		  std::cout << "|" << *tmp_buf;
+		  std::cout << "|" << std::string(tmp_buf);
 		  break;
 		}
 	  }
@@ -115,7 +138,7 @@ int main() {
 	}
 	std::cout << std::endl;
   }
-  seq_scan_executor.End();
+  nested_loop_join_executor.End();
 //  testBTree();
   return 0;
 }

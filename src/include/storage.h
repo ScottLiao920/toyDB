@@ -60,15 +60,17 @@ class toyDBTUPLE {
   RelID table_; // table source
   RowID row_; // row number in the source table
   std::vector<size_t> sizes_; // sizes of individual columns, the sum of this vector should equal to size_
+  std::vector<size_t> type_ids_; // typeid of col types
   toyDBTUPLE() {
 	this->table_ = INVALID_PHYSICAL_PAGE_ID;
 	this->row_ = INVALID_PHYSICAL_PAGE_ID;
 	this->content_ = nullptr;
 	this->size_ = 0;
-	this->sizes_ = std::vector<size_t>(1, 0);
+	this->sizes_ = std::vector<size_t>();
+	this->type_ids_ = std::vector<size_t>();
   }
 //  toyDBTUPLE(const toyDBTUPLE &ref);
-  toyDBTUPLE(char *buf, size_t len, std::vector<size_t> sizes);
+  toyDBTUPLE(char *buf, size_t len, std::vector<size_t> sizes, std::vector<size_t> type_ids);
   toyDBTUPLE &operator=(const toyDBTUPLE &);
   ~toyDBTUPLE();
 };
@@ -132,6 +134,7 @@ class rel {
   std::string GetName() { return this->name_; }
   size_t GetOffset(const std::string &);
   size_t GetColIdx(const std::string &);
+  std::vector<size_t> GetTypeIDs();
 };
 
 #endif //TOYDB_STORAGE_H

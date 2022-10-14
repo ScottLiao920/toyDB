@@ -15,8 +15,10 @@ class TableSchema {
  public:
   std::map<size_t, rel *> TableID2Table;
   std::map<std::string, rel *> TableName2Table;
+  std::map<rel *, std::tuple<size_t, std::string>> Table2IDName;
   friend class rel;
+  TableSchema() = default;
 };
 
-static TableSchema table_schema;
+extern TableSchema table_schema;
 #endif //TOYDB_SRC_INCLUDE_SCHEMA_H_
