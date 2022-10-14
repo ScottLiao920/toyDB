@@ -12,11 +12,11 @@
 #include <map>
 #include "storage.h"
 class TableSchema {
- private:
+ public:
   std::map<size_t, rel *> TableID2Table;
   std::map<std::string, rel *> TableName2Table;
   friend class rel;
 };
 
-TableSchema table_schema;
+static TableSchema table_schema;
 #endif //TOYDB_SRC_INCLUDE_SCHEMA_H_

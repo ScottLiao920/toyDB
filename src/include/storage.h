@@ -130,6 +130,8 @@ class rel {
   size_t get_tuple_size();
   std::vector<size_t> GetColSizes();
   std::string GetName() { return this->name_; }
+  size_t GetOffset(const std::string &);
+  size_t GetColIdx(const std::string &);
 };
 
 #endif //TOYDB_STORAGE_H

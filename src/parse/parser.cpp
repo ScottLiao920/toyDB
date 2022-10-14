@@ -168,17 +168,17 @@ bool comparison_expr::compare(const char *lhs_ptr, const char *rhs_ptr, size_t t
   switch (type_schema.typeID2type[type_id]) {
 	case (1): {
 	  int lhs = (int)*lhs_ptr;
-	  int rhs = atoi(rhs_ptr);
+	  int rhs = std::strtoll(rhs_ptr, nullptr, 0);
 	  return this->compare(lhs, rhs);
 	}
 	case (2): {
-	  float lhs = (float)*lhs_ptr;
-	  float rhs = atof(rhs_ptr);
+	  auto lhs = (float)*lhs_ptr;
+	  auto rhs = (float)std::strtof(rhs_ptr, nullptr);
 	  return this->compare(lhs, rhs);
 	}
 	case (3): {
 	  size_t lhs = (size_t)*lhs_ptr;
-	  size_t rhs = atol(rhs_ptr);
+	  size_t rhs = std::strtoul(rhs_ptr, nullptr, 0);
 	  return this->compare(lhs, rhs);
 	}
 	case (4): {

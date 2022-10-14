@@ -82,10 +82,12 @@ class joinExecutor : protected executor {
   comparison_expr *pred_ = nullptr;
   executor *left_child_ = nullptr;
   executor *right_child_ = nullptr;
+  size_t offset_ = 0;
  public:
   void Init() override = 0;
   void Next(void *dst) override = 0;
   void End() override = 0;
+  toyDBTUPLE *Join(toyDBTUPLE *, toyDBTUPLE *, const std::string &);
 };
 
 class nestedLoopJoinExecutor : protected joinExecutor {

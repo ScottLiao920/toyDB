@@ -168,6 +168,32 @@ rel::rel(const std::string &name) {
   table_schema.TableID2Table[this->relId_] = this;
   this->set_name_(name);
 }
+size_t rel::GetOffset(const std::string &col_name) {
+  std::vector<size_t> sizes = this->GetColSizes();
+  size_t col_offset = 0, cnt = 0;
+  for (auto it : this->cols_) {
+	std::string upper_name = it.getName();
+	std::transform(upper_name.begin(), upper_name.end(), upper_name.begin(), ::toupper);
+	if (col_name == upper_name) {
+	  break;
+	}
+	col_offset += sizes[cnt];
+	++cnt;
+  }
+  return col_offset;
+}
+size_t rel::GetColIdx(const std::string &col_name) {
+  size_t col_idx = 0;
+  for (auto it : this->cols_) {
+	std::string upper_name = it.getName();
+	std::transform(upper_name.begin(), upper_name.end(), upper_name.begin(), ::toupper);
+	if (col_name == upper_name) {
+	  break;
+	}
+	col_idx += 1;
+  }
+  return col_idx;
+}
 
 row::row(size_t size, RelID par_table) {
   this->id_ = std::time(nullptr);

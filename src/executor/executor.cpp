@@ -10,6 +10,7 @@
 #include <utility>
 #include "btree.h"
 #include "common.h"
+#include "schema.h"
 
 void executor::Init() {
   std::memset(this->mem_context_, 0, EXEC_MEM);
@@ -90,15 +91,8 @@ void seqScanExecutor::Init(rel *tab, bufferPoolManager *manager, comparison_expr
 void seqScanExecutor::Next(void *dst) {
   size_t len = this->table_->get_tuple_size();
   std::vector<size_t> sizes = this->table_->GetColSizes();
-  size_t col_idx = 0;
-  for (auto it : this->table_->cols_) {
-	std::string upper_name = it.getName();
-	std::transform(upper_name.begin(), upper_name.end(), upper_name.begin(), ::toupper);
-	if (this->qual_->data_srcs[0] == upper_name) {
-	  break;
-	}
-	col_idx += 1;
-  }
+  size_t col_idx = this->table_->GetColIdx(this->qual_->data_srcs[0]);
+  size_t offset = this->table_->GetOffset(this->qual_->data_srcs[0]);
   char *rhs = (char *)this->qual_->data_srcs[1].c_str();
   if (this->mode_ == volcano) {
 	// emit one at a time
@@ -115,21 +109,14 @@ void seqScanExecutor::Next(void *dst) {
 	std::memcpy(buf, data_ptr, len);
 	toyDBTUPLE tmp((char *)buf, len, sizes);
 	// Verify comparison expression
-	size_t offset = 0, cnt = 0;
-	for (auto it : tmp.sizes_) {
-	  if (cnt == col_idx
-		  and this->qual_->compare((char *)buf + offset, (char *)rhs, this->table_->cols_[col_idx].typeid_)) {
-		((std::vector<toyDBTUPLE> *)dst)->at(0) = tmp;
-		break;
-	  }
-	  cnt += 1;
-	  offset += it;
+	if (this->qual_->compare((char *)buf + offset, (char *)rhs, this->table_->cols_[col_idx].typeid_)) {
+	  ((std::vector<toyDBTUPLE> *)dst)->at(0) = tmp;
 	}
-//	((std::vector<toyDBTUPLE> *)dst)->at(0) = *tmp;
-//	((std::vector<toyDBTUPLE> *)dst)->emplace(((std::vector<toyDBTUPLE> *)dst)->begin(), (char *)buf, len, sizes);
+	//	((std::vector<toyDBTUPLE> *)dst)->at(0) = *tmp;
+	//	((std::vector<toyDBTUPLE> *)dst)->emplace(((std::vector<toyDBTUPLE> *)dst)->begin(), (char *)buf, len, sizes);
 	tfree(buf);
-//	tfree(data_ptr);
-//	((std::vector<toyDBTUPLE> *)dst)->emplace_back((char *)buf, len, sizes);
+	//	tfree(data_ptr);
+	//	((std::vector<toyDBTUPLE> *)dst)->emplace_back((char *)buf, len, sizes);
   } else {
 	// emit a batch at a time
 	for (auto i = 0; i < BATCH_SIZE; i++) {
@@ -260,22 +247,61 @@ void selectExecutor::End() {
 }
 void nestedLoopJoinExecutor::Next(void *dst) {
   for (;;) {
-	std::vector<toyDBTUPLE> left_tuple;
+	std::vector<toyDBTUPLE> left_tuple(BATCH_SIZE);
 	this->left_child_->Next(&left_tuple);
-	if (left_tuple.empty()) {
+	if (left_tuple.cbegin()->content_ == nullptr) {
 	  break;
 	}
-	for (const auto &it : left_tuple) {
-	  std::vector<toyDBTUPLE> right_tuple;
-	  this->right_child_->Next(&right_tuple);
-	  if (right_tuple.empty()) {
-		break;
-	  }
-	  for (const auto &right : right_tuple) {
-//		if (this->pred_->compare(it.content_, right.content_)) {
-//		  ((std::vector<toyDBTUPLE> *)dst)->push_back(it, right);
-//		}
+
+	//find offset of column content for predicate validation
+	std::string col_name = this->pred_->data_srcs[0].substr(this->pred_->data_srcs[0].find('.'));
+	rel *l_tab = table_schema.TableID2Table[left_tuple[0].table_];
+	std::vector<size_t> sizes = l_tab->GetColSizes();
+	size_t l_col_offset = l_tab->GetOffset(col_name);
+	size_t l_col_idx = l_tab->GetColIdx(col_name);
+
+	for (auto left : left_tuple) {
+	  for (;;) {
+		std::vector<toyDBTUPLE> right_tuple(BATCH_SIZE);
+		this->right_child_->Next(&right_tuple);
+		rel *r_tab = table_schema.TableID2Table[left_tuple[0].table_];
+		std::vector<size_t> r_sizes = r_tab->GetColSizes();
+		size_t r_col_offset = r_tab->GetOffset(this->pred_->data_srcs[1]);
+		if (right_tuple.cbegin()->content_ == nullptr) {
+		  break;
+		}
+		for (auto right : right_tuple) {
+		  if (this->pred_->compare(left.content_ + l_col_offset,
+								   right.content_ + r_col_offset,
+								   l_tab->cols_[l_col_idx].typeid_)) {
+			// pass predicate, join this two tuple tgt
+			toyDBTUPLE *tup = this->Join(&left, &right, col_name);
+			((std::vector<toyDBTUPLE> *)dst)->emplace_back(*tup);
+		  }
+		}
 	  }
 	}
   }
+}
+toyDBTUPLE *joinExecutor::Join(toyDBTUPLE *left, toyDBTUPLE *right, const std::string &col_name) {
+  std::vector<size_t> l_sizes = left->sizes_;
+  rel *r_tab = table_schema.TableID2Table[right->table_];
+  size_t r_idx = r_tab->GetColIdx(col_name);
+  std::vector<size_t> r_sizes = right->sizes_;
+  size_t ttl_size = left->size_ + right->size_ - right->sizes_[r_idx];
+  char *buf = talloc(ttl_size);
+  std::memcpy(buf, left->content_, left->size_);
+  size_t offset = 0;
+  for (size_t cnt = 0; cnt < right->sizes_.size(); ++cnt) {
+	if (cnt != r_idx) {
+	  std::memcpy(buf + left->size_ + offset, right->content_, r_sizes[cnt]);
+	  offset += r_sizes[cnt];
+	  l_sizes.push_back(r_sizes[cnt]);
+	}
+  }
+  auto *out = (toyDBTUPLE *)talloc(sizeof(toyDBTUPLE));
+  out->content_ = buf;
+  out->sizes_ = l_sizes;
+  out->size_ = ttl_size;
+  return out;
 }
