@@ -29,7 +29,7 @@ std::vector<executor *> plan_node(expr *expression) {
 	  } else {
 		// add qualification to scan executor;
 		for (auto it : out) {
-		  if (((scanExecutor *)it)->GetTable() == expression->data_srcs[0]) {
+		  if (((scanExecutor *)it)->GetTableID() == std::get<0>(expression->data_srcs[0])) {
 			((scanExecutor *)it)->SetQual((comparison_expr *)expression);
 			break;
 		  }

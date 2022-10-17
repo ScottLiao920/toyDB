@@ -42,7 +42,8 @@ class scanExecutor : public executor {
   void SetMode(execution_mode);
   void SetTable(rel *);
   void SetBufferPoolManager(bufferPoolManager *);
-  std::string GetTable() { return this->table_->GetName(); }
+  std::string GetTableName() { return this->table_->GetName(); }
+  size_t GetTableID() { return this->table_->GetID(); }
   void SetQual(comparison_expr *qual) { this->qual_ = qual; }
   void Next(void *dst) override = 0;
   void End() override = 0;

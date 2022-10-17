@@ -18,7 +18,7 @@ class expr {
  public:
   expr_type type;
   std::string alias;
-  std::vector<std::string> data_srcs;
+  std::vector<std::tuple<size_t, size_t, size_t, std::string>> data_srcs;
 
   expr();
 
@@ -33,10 +33,11 @@ class aggr_expr : public expr {
 class comparison_expr : public expr {
  public:
   comparision comparision_type;
-
+  std::vector<std::size_t> type_ids;
   template<typename T>
   bool compare(T, T);
   bool compare(const char *, const char *, size_t);
+  bool compareFunc(char*, char*);
 };
 
 class queryTree {
@@ -62,6 +63,7 @@ class parser {
   parser() = default;
 
   void parse(const std::string &);
+  static std::tuple<size_t, size_t, size_t, std::string> processDataSrc(const std::string &);
 };
 
 #endif //TOYDB_PARSER_H

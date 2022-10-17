@@ -135,6 +135,7 @@ class rel {
   size_t GetOffset(const std::string &);
   size_t GetColIdx(const std::string &);
   std::vector<size_t> GetTypeIDs();
+  RelID GetID() { return this->relId_; };
 };
 
 #endif //TOYDB_STORAGE_H

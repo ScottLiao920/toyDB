@@ -8,11 +8,57 @@
 
 #include "parser.h"
 #include "type.h"
+#include "schema.h"
 
 queryTree::queryTree() {
   this->command_ = INVALID_COMMAND;
 //  this->left_ = (queryTree *)std::malloc(sizeof(queryTree));
 //  this->right_ = (queryTree *)std::malloc(sizeof(queryTree));
+}
+
+bool is_all_digits(std::string string) {
+  for (auto c : string) {
+	if (std::isdigit(c) == 0) {
+	  return false;
+	}
+  }
+  return true;
+}
+
+std::tuple<size_t, size_t, size_t, std::string> parser::processDataSrc(const std::string &inp) {
+  /* If the data src is from a table, return (relID, colID, typeId of the col);
+   * else return (INVALID relID, INVALID colID, typeId of the constant).
+  */
+  // check operand type here. If "." exists in the operand, check for existing tables and columns, if not found,
+  // search for float number. Else, should be either a column (without numeric char) or an integer constant.
+  std::string raw_data_src(inp);
+  boost::erase_all(raw_data_src, " ");
+  std::regex dot("[.]");
+  std::smatch tmp;
+  std::regex_search(raw_data_src, tmp, dot);
+  if (tmp.empty()) {
+	if (is_all_digits(raw_data_src)) {
+	  return {INVALID_RELID, INVALID_COLID, typeid(int).hash_code(), raw_data_src};
+	} else {
+	  // TODO: search for matching column in all tables.
+	}
+  } else {
+	std::string prefix = tmp.format("$`");
+	if (is_all_digits(prefix)) {
+	  return {INVALID_RELID, INVALID_COLID, typeid(float).hash_code(), raw_data_src};
+	} else {
+	  auto it = table_schema.TableName2Table.find(prefix);
+	  if (it == table_schema.TableName2Table.end()) {
+		// table not found in current schema
+		std::cout << "Parse Error: Table " << prefix << " not found in current schema!" << std::endl;
+	  } else {
+		RelID id = it->second->GetID();
+		ColID col_id = it->second->GetColIdx(tmp.format("$'"));
+		size_t type_id = it->second->GetTypeIDs()[it->second->GetColIdx(tmp.format("$'"))];
+		return {id, col_id, type_id, raw_data_src};
+	  }
+	}
+  }
 }
 
 void parser::parse(const std::string &sql_string) {
@@ -57,34 +103,34 @@ void parser::parse(const std::string &sql_string) {
 	  cur_expr->type = AGGR;
 	  ((aggr_expr *)cur_expr)->aggr_type = MIN;
 	  it = it.substr(it.find("MIN(") + 4);
-	  cur_expr->data_srcs.push_back(it.substr(0, it.find(")")));
+	  cur_expr->data_srcs.push_back(processDataSrc(it.substr(0, it.find(")"))));
 	} else if (it.find("MAX(") != std::string::npos) {
 	  this->stmt_tree_.hasAgg = true;
 	  cur_expr->type = AGGR;
 	  ((aggr_expr *)cur_expr)->aggr_type = MAX;
 	  it = it.substr(it.find("MAX(") + 4);
-	  cur_expr->data_srcs.push_back(it.substr(0, it.find(")")));
+	  cur_expr->data_srcs.push_back(processDataSrc(it.substr(0, it.find(")"))));
 	} else if (it.find("AVG(") != std::string::npos) {
 	  this->stmt_tree_.hasAgg = true;
 	  cur_expr->type = AGGR;
 	  ((aggr_expr *)cur_expr)->aggr_type = AVG;
 	  it = it.substr(it.find("AVG(") + 4);
-	  cur_expr->data_srcs.push_back(it.substr(0, it.find(")")));
+	  cur_expr->data_srcs.push_back(processDataSrc(it.substr(0, it.find(")"))));
 	} else if (it.find("COUNT(") != std::string::npos) {
 	  this->stmt_tree_.hasAgg = true;
 	  cur_expr->type = AGGR;
 	  ((aggr_expr *)cur_expr)->aggr_type = COUNT;
 	  it = it.substr(it.find("COUNT(") + 6);
-	  cur_expr->data_srcs.push_back(it.substr(0, it.find(")")));
+	  cur_expr->data_srcs.push_back(processDataSrc(it.substr(0, it.find(")"))));
 	} else if (it.find("SUM(") != std::string::npos) {
 	  this->stmt_tree_.hasAgg = true;
 	  cur_expr->type = AGGR;
 	  ((aggr_expr *)cur_expr)->aggr_type = SUM;
 	  it = it.substr(it.find("SUM(") + 4);
-	  cur_expr->data_srcs.push_back(it.substr(0, it.find(")")));
+	  cur_expr->data_srcs.push_back(processDataSrc(it.substr(0, it.find(")"))));
 	} else {
 	  cur_expr->type = COL;
-	  cur_expr->data_srcs.emplace_back(it);
+	  cur_expr->data_srcs.emplace_back(processDataSrc(it));
 	}
 
 	this->stmt_tree_.target_list_.push_back(cur_expr);
@@ -116,8 +162,8 @@ void parser::parse(const std::string &sql_string) {
 	  second_operand.erase(std::remove_if(second_operand.begin(),
 										  second_operand.end(),
 										  [](unsigned char x) { return std::isspace(x); }), second_operand.end());
-	  cur_qual->data_srcs.push_back(first_operand);
-	  cur_qual->data_srcs.push_back(second_operand);
+	  cur_qual->data_srcs.push_back(processDataSrc(first_operand));
+	  cur_qual->data_srcs.push_back(processDataSrc(second_operand));
 	  // check comparison type and assign it accordingly. Maybe have a dict for it?
 	  if (all_op == "<=") {
 		((comparison_expr *)cur_qual)->comparision_type = ngt;
@@ -191,6 +237,48 @@ bool comparison_expr::compare(const char *lhs_ptr, const char *rhs_ptr, size_t t
 	default: {
 	  std::cout << "Type not supported." << std::endl;
 	  return false;
+	}
+  }
+}
+unsigned long long makepair(size_t type1, size_t type2) {
+  return (type_schema.typeID2type[type1] << 32) + type_schema.typeID2type[type2];
+}
+bool comparison_expr::compareFunc(char *lhs_ptr, char *rhs_ptr) {
+  unsigned long long specifier = makepair(std::get<2>(this->data_srcs[0]), std::get<2>(this->data_srcs[1]));
+  switch (specifier) {
+	case (0x100000001): {
+	  int lhs = (int)*lhs_ptr;
+	  int rhs = (int)*rhs_ptr;
+	  return this->compare(lhs, rhs);
+	}
+	case (0x200000002): {
+	  int lhs = (float)*lhs_ptr;
+	  int rhs = (float)*rhs_ptr;
+	  return this->compare(lhs, rhs);
+	}
+	case (0x300000003): {
+	  int lhs = (size_t)*lhs_ptr;
+	  int rhs = (size_t)*rhs_ptr;
+	  return this->compare(lhs, rhs);
+	}
+	case (0x400000004): {
+	  int lhs = (int)*lhs_ptr;
+	  int rhs = std::strtoll(rhs_ptr, nullptr, 0);
+	  return this->compare(lhs, rhs);
+	}
+	case (0x200000004): {
+	  int lhs = (float)*lhs_ptr;
+	  int rhs = (float)std::strtof(rhs_ptr, nullptr);
+	  return this->compare(lhs, rhs);
+	}
+	case (0x300000004): {
+	  int lhs = (size_t)*lhs_ptr;
+	  int rhs = std::strtoul(rhs_ptr, nullptr, 0);
+	  return this->compare(lhs, rhs);
+	}
+	default: {
+	  std::cout << "Comparison not supported for "
+				<< specifier << std::endl;
 	}
   }
 }

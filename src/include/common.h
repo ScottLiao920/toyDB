@@ -29,6 +29,9 @@ typedef unsigned int PhysicalPageID;
 typedef unsigned int RelID;
 typedef unsigned int RowID;
 typedef unsigned int ColID;
+static RelID INVALID_RELID = 0xFFFFFFFF;
+static ColID INVALID_COLID = 0xFFFFFFFF;
+static RowID INVALID_ROWID = 0xFFFFFFFF;
 
 enum command_type {
   SELECT,

@@ -94,9 +94,9 @@ void seqScanExecutor::Init(rel *tab, bufferPoolManager *manager, comparison_expr
 void seqScanExecutor::Next(void *dst) {
   size_t len = this->table_->get_tuple_size();
   std::vector<size_t> sizes = this->table_->GetColSizes();
-  size_t col_idx = this->table_->GetColIdx(this->qual_->data_srcs[0]);
-  size_t offset = this->table_->GetOffset(this->qual_->data_srcs[0]);
-  char *rhs = (char *)this->qual_->data_srcs[1].c_str();
+//  size_t col_idx = std::get<1>(this->qual_->data_srcs[0]);
+  size_t offset = this->table_->GetOffset(std::get<3>(this->qual_->data_srcs[0]));
+  char *rhs = (char *)std::get<3>(this->qual_->data_srcs[1]).c_str();
   if (this->mode_ == volcano) {
 	// emit one at a time
 	char *buf = talloc(len);
@@ -109,6 +109,10 @@ void seqScanExecutor::Next(void *dst) {
 	  std::memcpy(&data_ptr, this->mem_ptr_ - sizeof(char *), sizeof(char *));
 	  if (data_ptr == nullptr) {
 		// One past the last toyDBTuple
+		// write an empty tuple to dst
+		toyDBTUPLE tmp;
+		((std::vector<toyDBTUPLE> *)dst)->at(0) = tmp;
+		tfree(buf);
 		return;
 	  } else {
 		data_ptr -= len;
@@ -121,7 +125,7 @@ void seqScanExecutor::Next(void *dst) {
 	toyDBTUPLE tmp((char *)buf, len, sizes, type_ids);
 	tmp.table_ = std::get<0>(table_schema.Table2IDName[this->table_]);
 	// Verify comparison expression
-	if (this->qual_->compare((char *)buf + offset, (char *)rhs, this->table_->cols_[col_idx].typeid_)) {
+	if (this->qual_->compareFunc((char *)buf + offset, (char *)rhs)) {
 	  ((std::vector<toyDBTUPLE> *)dst)->at(0) = tmp;
 	  ++this->cnt_;
 	}
@@ -285,11 +289,12 @@ void nestedLoopJoinExecutor::Next(void *dst) {
 	// for every left tuple, iterate thru all right tuples, stops when BATCH_SIZE of tuples found or all scanned.
 
 	//find offset of column content for predicate validation
-	std::string col_name = this->pred_->data_srcs[0].substr(this->pred_->data_srcs[0].find('.') + 1);
+	std::string
+		col_name = std::get<3>(this->pred_->data_srcs[0]).substr(std::get<3>(this->pred_->data_srcs[0]).find('.') + 1);
 	rel *l_tab = table_schema.TableID2Table[this->curLeftTuple_->table_];
 	std::vector<size_t> sizes = l_tab->GetColSizes();
 	size_t l_col_offset = l_tab->GetOffset(col_name);
-	size_t l_col_idx = l_tab->GetColIdx(col_name);
+//	size_t l_col_idx = l_tab->GetColIdx(col_name);
 
 	// Iterate thru all right tuples (start from the current right tuple)
 	rel *r_tab = table_schema.TableID2Table[this->curLeftTuple_->table_];
@@ -297,9 +302,8 @@ void nestedLoopJoinExecutor::Next(void *dst) {
 	size_t r_col_offset = r_tab->GetOffset(col_name);
 //		  std::cout << "Comparing " << (int)*(left.content_ + l_col_offset) << " from left side with "
 //					<< (int)*(right.content_ + r_col_offset) << " from right side" << std::endl;
-	if (this->pred_->compare(this->curLeftTuple_->content_ + l_col_offset,
-							 this->curRightTuple_->content_ + r_col_offset,
-							 l_tab->cols_[l_col_idx].typeid_)) {
+	if (this->pred_->compareFunc(this->curLeftTuple_->content_ + l_col_offset,
+								 this->curRightTuple_->content_ + r_col_offset)) {
 	  // pass predicate, join this two tuple tgt
 	  toyDBTUPLE *tup = this->Join(this->curLeftTuple_.base(), this->curRightTuple_.base(), col_name);
 	  ((std::vector<toyDBTUPLE> *)dst)->at(cnt) = *tup;
@@ -313,6 +317,7 @@ void nestedLoopJoinExecutor::Next(void *dst) {
 	  if (this->curRightBatch_.begin()->content_ == nullptr) {
 		// iterate thru all right tuples already, get to the next left tuple
 		((seqScanExecutor *)this->right_child_)->Reset(); // TODO: this should be compatible any other executors.
+		this->curLeftTuple_ = std::next(this->curLeftTuple_);
 		if (this->curLeftTuple_ == this->curLeftBatch_.end()) {
 		  // Reached end of current block, retrieve the next block
 		  this->left_child_->Next(&this->curLeftBatch_);
@@ -321,9 +326,6 @@ void nestedLoopJoinExecutor::Next(void *dst) {
 			return;
 		  }
 		  this->curLeftTuple_ = this->curLeftBatch_.begin();
-		} else {
-		  // move to the next tuple in current left batch
-		  this->curLeftTuple_ = std::next(this->curLeftTuple_);
 		}
 		this->right_child_->Next(&this->curRightBatch_);
 	  }

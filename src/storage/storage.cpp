@@ -69,6 +69,7 @@ column::column(std::string inp_name, size_t size, RelID par_table, const std::ty
 
 void rel::set_name_(std::string inp) {
   this->name_ = std::move(inp);
+  std::transform(this->name_.begin(), this->name_.end(), this->name_.begin(), ::toupper);
   table_schema.TableName2Table[this->name_] = this;
   table_schema.Table2IDName[this] = std::tie(this->relId_, inp);
 }
@@ -252,13 +253,19 @@ toyDBTUPLE::~toyDBTUPLE() {
 toyDBTUPLE &toyDBTUPLE::operator=(const toyDBTUPLE &ref) {
   if (&ref != this) {
 	this->size_ = ref.size_;
-	this->content_ = (char *)new char[size_];
-	std::memcpy(this->content_, ref.content_, this->size_);
+	if (ref.content_ == nullptr) {
+	  this->content_ = nullptr;
+	} else {
+	  this->content_ = (char *)new char[size_];
+	  std::memcpy(this->content_, ref.content_, this->size_);
+	}
 	this->table_ = ref.table_;
 	this->row_ = ref.row_;
+	this->sizes_ = std::vector<size_t>();
 	for (auto it : ref.sizes_) {
 	  this->sizes_.push_back(it);
 	}
+	this->type_ids_ = std::vector<size_t>();
 	for (auto it : ref.type_ids_) {
 	  this->type_ids_.push_back(it);
 	}
