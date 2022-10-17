@@ -6,12 +6,14 @@
 // Created by liaoc on 9/15/22.
 //
 
+#include <cassert>
 #include "parser.h"
 #include "type.h"
 #include "schema.h"
 
 queryTree::queryTree() {
   this->command_ = INVALID_COMMAND;
+  this->range_table_ = std::vector<std::string>();
 //  this->left_ = (queryTree *)std::malloc(sizeof(queryTree));
 //  this->right_ = (queryTree *)std::malloc(sizeof(queryTree));
 }
@@ -25,6 +27,16 @@ bool is_all_digits(std::string string) {
   return true;
 }
 
+void split(std::string inp, std::string delim, std::vector<std::string> &out) {
+  std::regex tmp = std::regex(delim);
+  std::sregex_token_iterator it(inp.begin(), inp.end(), tmp, -1);
+  std::sregex_token_iterator end;
+  for (; it != end; ++it) {
+	out.emplace_back(*it);
+  }
+//  std::copy(it, end, out.begin());
+}
+
 std::tuple<size_t, size_t, size_t, std::string> parser::processDataSrc(const std::string &inp) {
   /* If the data src is from a table, return (relID, colID, typeId of the col);
    * else return (INVALID relID, INVALID colID, typeId of the constant).
@@ -32,7 +44,7 @@ std::tuple<size_t, size_t, size_t, std::string> parser::processDataSrc(const std
   // check operand type here. If "." exists in the operand, check for existing tables and columns, if not found,
   // search for float number. Else, should be either a column (without numeric char) or an integer constant.
   std::string raw_data_src(inp);
-  boost::erase_all(raw_data_src, " ");
+  raw_data_src.erase(std::remove(raw_data_src.begin(), raw_data_src.end(), ' '), raw_data_src.end());
   std::regex dot("[.]");
   std::smatch tmp;
   std::regex_search(raw_data_src, tmp, dot);
@@ -77,17 +89,17 @@ void parser::parse(const std::string &sql_string) {
 	return;
   }
   upp_sql = upp_sql.substr(6);
-  std::vector<std::string> TL_RTE; //vector of raw string for target list and range table (optional)
-  boost::iter_split(TL_RTE, upp_sql, boost::algorithm::first_finder("FROM"));
+  std::smatch TL_RTE; //vector of raw string for target list and range table (optional)
+  std::regex_search(upp_sql, TL_RTE, std::regex("FROM"));
   std::vector<std::string> target_list;
-  boost::split(target_list, TL_RTE[0], boost::is_any_of(","));
+  split(std::string(TL_RTE.format("$`")), ",", target_list);
   for (auto &it : target_list) {
 	expr *cur_expr = new expr;
 
 	// check for alias
 	if (it.find("AS") != std::string::npos) {
 	  std::vector<std::string> name_alias;
-	  boost::iter_split(name_alias, it, boost::algorithm::first_finder("AS"));
+	  split(it, "AS", name_alias);
 	  assert(name_alias.size() == 2);
 	  cur_expr->alias = name_alias[1];
 	  it = it.substr(0, it.find("AS"));
@@ -95,7 +107,7 @@ void parser::parse(const std::string &sql_string) {
 	  // just use input as alias
 	  cur_expr->alias = it;
 	}
-	boost::erase_all(cur_expr->alias, " ");
+	cur_expr->alias.erase(std::remove(cur_expr->alias.begin(), cur_expr->alias.end(), ' '), cur_expr->alias.end());
 
 	// check for aggregation, nested aggregation (MIN(MAX(...) )) currently not supported.
 	if (it.find("MIN(") != std::string::npos) {
@@ -138,12 +150,15 @@ void parser::parse(const std::string &sql_string) {
 
   // split remaining SQL statement into range table list and qualifications
   std::vector<std::string> RTE_qual;
-  boost::iter_split(RTE_qual, TL_RTE[1], boost::algorithm::first_finder("WHERE"));
-
-  boost::split(this->stmt_tree_.range_table_, RTE_qual[0], boost::is_any_of(","));
-  // TODO: lookup a system catalog and map rte name_ to relid
+  split(TL_RTE.format("$'"), "WHERE", RTE_qual);
+//  boost::iter_split(RTE_qual, TL_RTE[1], boost::algorithm::first_finder("WHERE"));
+  std::vector<std::string> tmp_range_table;
+  split(RTE_qual[0], ",", tmp_range_table);
+  this->stmt_tree_.range_table_ = tmp_range_table;
+//  boost::split(this->stmt_tree_.range_table_, RTE_qual[0], boost::is_any_of(","));
   std::vector<std::string> quals;
-  boost::iter_split(quals, RTE_qual[1], boost::algorithm::first_finder("AND"));
+  split(RTE_qual[1], "AND", quals);
+//  boost::iter_split(quals, RTE_qual[1], boost::algorithm::first_finder("AND"));
   for (const auto &it : quals) {
 	// check qualifications in WHERE clause
 	expr *cur_qual = new expr;

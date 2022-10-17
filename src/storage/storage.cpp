@@ -9,6 +9,7 @@
 #include <cstring>
 #include <utility>
 #include <ctime>
+#include <algorithm>
 #include "storage.h"
 #include "bufferpool.h"
 #include "schema.h"

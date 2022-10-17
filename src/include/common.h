@@ -19,7 +19,7 @@
 #include <typeindex>
 #include <vector>
 #include <numeric>
-#include <boost/algorithm/string.hpp>
+//#include <boost/algorithm/string.hpp>
 #include "config.h"
 
 typedef unsigned int HEAP_PAGE_ID;

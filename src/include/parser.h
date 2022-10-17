@@ -37,7 +37,7 @@ class comparison_expr : public expr {
   template<typename T>
   bool compare(T, T);
   bool compare(const char *, const char *, size_t);
-  bool compareFunc(char*, char*);
+  bool compareFunc(char *, char *);
 };
 
 class queryTree {
