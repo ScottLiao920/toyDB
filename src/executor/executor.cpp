@@ -12,11 +12,11 @@
 #include "common.h"
 #include "schema.h"
 
-//TableSchema table_schema;
 void executor::Init() {
   std::memset(this->mem_context_, 0, EXEC_MEM);
   this->mode_ = volcano;
   this->free_spaces_[this->mem_context_] = EXEC_MEM;
+  rel *view_ = new rel;
 }
 char *executor::talloc(size_t size) {
   for (auto it : this->free_spaces_) {
@@ -59,6 +59,9 @@ void executor::tfree(char *dst) {
   }
 }
 void executor::End() {
+  PhysicalPageID tmp = this->bpmgr_->stmgr_->addPage();
+  this->bpmgr_->stmgr_->writePage(tmp, this->mem_context_);
+  this->bpmgr_;
 //  free(this->mem_context_);
 }
 
@@ -82,7 +85,7 @@ void seqScanExecutor::Init(rel *tab, bufferPoolManager *manager, comparison_expr
   executor::Init();
   this->table_ = tab;
   this->bpmgr_ = manager;
-//  this->view_->SetName("Seq Scan View for Tab " + tab->GetName());
+  this->view_->SetName("Seq Scan View for Tab " + tab->GetName());
   this->qual_ = qual;
   this->cnt_ = 0;
   this->pages_ = this->table_->get_location();
@@ -154,6 +157,7 @@ void seqScanExecutor::Next(void *dst) {
   }
 }
 void seqScanExecutor::End() {
+  executor::End();
 //  free(this->mem_context_);
 }
 void seqScanExecutor::Reset() {
@@ -316,7 +320,8 @@ void nestedLoopJoinExecutor::Next(void *dst) {
 	  this->right_child_->Next(&this->curRightBatch_);
 	  if (this->curRightBatch_.begin()->content_ == nullptr) {
 		// iterate thru all right tuples already, get to the next left tuple
-		((seqScanExecutor *)this->right_child_)->Reset(); // TODO: this should be compatible any other executors.
+		((seqScanExecutor *)
+			this->right_child_)->Reset(); // TODO: this should be compatible any other executors.
 		this->curLeftTuple_ = std::next(this->curLeftTuple_);
 		if (this->curLeftTuple_ == this->curLeftBatch_.end()) {
 		  // Reached end of current block, retrieve the next block

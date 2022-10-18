@@ -14,7 +14,7 @@
 queryTree::queryTree() {
   this->command_ = INVALID_COMMAND;
   this->range_table_ = std::vector<std::string>();
-//  this->left_ = (queryTree *)std::malloc(sizeof(queryTree));
+//  this->child_ = (queryTree *)std::malloc(sizeof(queryTree));
 //  this->right_ = (queryTree *)std::malloc(sizeof(queryTree));
 }
 
@@ -78,12 +78,20 @@ void parser::parse(const std::string &sql_string) {
   std::transform(upp_sql.begin(), upp_sql.end(), upp_sql.begin(), ::toupper);
   if (upp_sql.compare(0, 6, "SELECT") == 0) {
 	this->stmt_tree_.command_ = SELECT;
+	this->stmt_tree_.root_ = new parseNode;
+	this->stmt_tree_.root_->type_ = SelectNode;
   } else if (upp_sql.compare(0, 6, "INSERT") == 0) {
 	this->stmt_tree_.command_ = INSERT;
+	this->stmt_tree_.root_ = new parseNode;
+	this->stmt_tree_.root_->type_ = UpdateNode;
   } else if (upp_sql.compare(0, 6, "UPDATE") == 0) {
 	this->stmt_tree_.command_ = UPDATE;
+	this->stmt_tree_.root_ = new parseNode;
+	this->stmt_tree_.root_->type_ = UpdateNode;
   } else if (upp_sql.compare(0, 6, "DELETE") == 0) {
 	this->stmt_tree_.command_ = DELETE;
+	this->stmt_tree_.root_ = new parseNode;
+	this->stmt_tree_.root_->type_ = UpdateNode;
   } else {
 	this->stmt_tree_.command_ = INVALID_COMMAND;
 	return;
@@ -93,8 +101,10 @@ void parser::parse(const std::string &sql_string) {
   std::regex_search(upp_sql, TL_RTE, std::regex("FROM"));
   std::vector<std::string> target_list;
   split(std::string(TL_RTE.format("$`")), ",", target_list);
+  parseNode *cur_parse_node = this->stmt_tree_.root_;
   for (auto &it : target_list) {
 	expr *cur_expr = new expr;
+	cur_parse_node->expression_ = cur_expr;
 
 	// check for alias
 	if (it.find("AS") != std::string::npos) {
@@ -110,6 +120,7 @@ void parser::parse(const std::string &sql_string) {
 	cur_expr->alias.erase(std::remove(cur_expr->alias.begin(), cur_expr->alias.end(), ' '), cur_expr->alias.end());
 
 	// check for aggregation, nested aggregation (MIN(MAX(...) )) currently not supported.
+	cur_parse_node->type_ = AggrNode;
 	if (it.find("MIN(") != std::string::npos) {
 	  this->stmt_tree_.hasAgg = true;
 	  cur_expr->type = AGGR;
@@ -142,64 +153,77 @@ void parser::parse(const std::string &sql_string) {
 	  cur_expr->data_srcs.push_back(processDataSrc(it.substr(0, it.find(")"))));
 	} else {
 	  cur_expr->type = COL;
+	  cur_parse_node->type_ = SelectNode;
 	  cur_expr->data_srcs.emplace_back(processDataSrc(it));
 	}
-
 	this->stmt_tree_.target_list_.push_back(cur_expr);
+	cur_parse_node->child_ = new parseNode;
+	cur_parse_node = cur_parse_node->child_;
   }
 
   // split remaining SQL statement into range table list and qualifications
   std::vector<std::string> RTE_qual;
   split(TL_RTE.format("$'"), "WHERE", RTE_qual);
-//  boost::iter_split(RTE_qual, TL_RTE[1], boost::algorithm::first_finder("WHERE"));
   std::vector<std::string> tmp_range_table;
   split(RTE_qual[0], ",", tmp_range_table);
   this->stmt_tree_.range_table_ = tmp_range_table;
-//  boost::split(this->stmt_tree_.range_table_, RTE_qual[0], boost::is_any_of(","));
-  std::vector<std::string> quals;
-  split(RTE_qual[1], "AND", quals);
-//  boost::iter_split(quals, RTE_qual[1], boost::algorithm::first_finder("AND"));
-  for (const auto &it : quals) {
-	// check qualifications in WHERE clause
-	expr *cur_qual = new expr;
-	std::smatch op;
-	std::regex op_regex("[=<>!]");
-	std::regex_search(it, op, op_regex);
-	if (not op.empty()) {
-	  cur_qual->type = COMP;
-	  std::string all_op = op.format("$&");
-	  std::string first_operand, second_operand;
-	  first_operand = op.format("$`");
-	  second_operand = op.format("$'");
-	  first_operand.erase(std::remove_if(first_operand.begin(),
-										 first_operand.end(),
-										 [](unsigned char x) { return std::isspace(x); }), first_operand.end());
-	  second_operand.erase(std::remove_if(second_operand.begin(),
-										  second_operand.end(),
-										  [](unsigned char x) { return std::isspace(x); }), second_operand.end());
-	  cur_qual->data_srcs.push_back(processDataSrc(first_operand));
-	  cur_qual->data_srcs.push_back(processDataSrc(second_operand));
-	  // check comparison type and assign it accordingly. Maybe have a dict for it?
-	  if (all_op == "<=") {
-		((comparison_expr *)cur_qual)->comparision_type = ngt;
-	  } else if (all_op == "<") {
-		((comparison_expr *)cur_qual)->comparision_type = lt;
-	  } else if (all_op == ">") {
-		((comparison_expr *)cur_qual)->comparision_type = gt;
-	  } else if (all_op == ">=") {
-		((comparison_expr *)cur_qual)->comparision_type = nlt;
-	  } else if (all_op == "=") {
-		((comparison_expr *)cur_qual)->comparision_type = equal;
-	  } else if (all_op == "!=") {
-		((comparison_expr *)cur_qual)->comparision_type = ne;
+  if (RTE_qual.size() == 1) {
+	// no WHERE clauses
+  } else {
+	std::vector<std::string> quals;
+	split(RTE_qual[1], "AND", quals);
+	for (const auto &it : quals) {
+	  // check qualifications in WHERE clause
+	  expr *cur_qual = new expr;
+	  std::smatch op;
+	  std::regex op_regex("[=<>!]");
+	  std::regex_search(it, op, op_regex);
+	  if (not op.empty()) {
+		cur_qual->type = COMP;
+		std::string all_op = op.format("$&");
+		std::string first_operand, second_operand;
+		first_operand = op.format("$`");
+		second_operand = op.format("$'");
+		first_operand.erase(std::remove_if(first_operand.begin(),
+										   first_operand.end(),
+										   [](unsigned char x) { return std::isspace(x); }), first_operand.end());
+		second_operand.erase(std::remove_if(second_operand.begin(),
+											second_operand.end(),
+											[](unsigned char x) { return std::isspace(x); }), second_operand.end());
+		cur_qual->data_srcs.push_back(processDataSrc(first_operand));
+		cur_qual->data_srcs.push_back(processDataSrc(second_operand));
+		// check comparison type and assign it accordingly. Maybe have a dict for it?
+		if (all_op == "<=") {
+		  ((comparison_expr *)cur_qual)->comparision_type = ngt;
+		} else if (all_op == "<") {
+		  ((comparison_expr *)cur_qual)->comparision_type = lt;
+		} else if (all_op == ">") {
+		  ((comparison_expr *)cur_qual)->comparision_type = gt;
+		} else if (all_op == ">=") {
+		  ((comparison_expr *)cur_qual)->comparision_type = nlt;
+		} else if (all_op == "=") {
+		  ((comparison_expr *)cur_qual)->comparision_type = equal;
+		} else if (all_op == "!=") {
+		  ((comparison_expr *)cur_qual)->comparision_type = ne;
+		} else {
+		  ((comparison_expr *)cur_qual)->comparision_type = NO_COMP;
+		}
 	  } else {
-		((comparison_expr *)cur_qual)->comparision_type = NO_COMP;
+		std::cout << "Parse Error: Qualification List Init Failed." << std::endl;
 	  }
-	} else {
-	  std::cout << "Parse Error: Qualification List Init Failed." << std::endl;
+	  this->stmt_tree_.qual_.push_back(cur_qual);
+	  cur_parse_node->expression_ = cur_qual;
+	  if (std::get<0>(cur_qual->data_srcs[0]) != INVALID_RELID
+		  && std::get<0>(cur_qual->data_srcs[1]) != INVALID_RELID) {
+		cur_parse_node->type_ = JoinNode;
+	  } else {
+		cur_parse_node->type_ = CompNode;
+	  }
+	  cur_parse_node->child_ = new parseNode;
+	  cur_parse_node = cur_parse_node->child_;
 	}
-	this->stmt_tree_.qual_.push_back(cur_qual);
   }
+  cur_parse_node->type_ = EmptyNode;
 }
 
 expr::expr() {

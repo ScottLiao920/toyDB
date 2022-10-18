@@ -22,6 +22,9 @@ class executor {
   char *ptr = mem_context_;
   execution_mode mode_ = volcano;
   bufferPoolManager *bpmgr_;
+  rel *view_;
+//  std::vector<RelID> views_;
+//  std::vector<PhysicalPageID> on_disk_views_;
 //  inMemoryView *view_; // save to disk if buffer pool is full
  public:
   virtual void Init();

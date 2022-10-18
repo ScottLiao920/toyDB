@@ -18,7 +18,7 @@ class expr {
  public:
   expr_type type;
   std::string alias;
-  std::vector<std::tuple<size_t, size_t, size_t, std::string>> data_srcs;
+  std::vector<std::tuple<size_t, size_t, size_t, std::string>> data_srcs; // RelID, ColID, typeID, raw input
 
   expr();
 
@@ -33,11 +33,16 @@ class aggr_expr : public expr {
 class comparison_expr : public expr {
  public:
   comparision comparision_type;
-  std::vector<std::size_t> type_ids;
   template<typename T>
   bool compare(T, T);
   bool compare(const char *, const char *, size_t);
   bool compareFunc(char *, char *);
+};
+
+struct parseNode {
+  expr *expression_;
+  parseNode *child_;
+  ParseNodeType type_ = EmptyNode;
 };
 
 class queryTree {
@@ -46,8 +51,7 @@ class queryTree {
   std::vector<std::string>::size_type result_idx_ = 0;
   std::vector<expr *> target_list_;
   std::vector<expr *> qual_;
-  queryTree *left_;
-  queryTree *right_;
+  parseNode *root_;
   bool hasAgg = false;
   bool hasGroup = false;
 

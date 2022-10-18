@@ -68,7 +68,7 @@ column::column(std::string inp_name, size_t size, RelID par_table, const std::ty
   this->cnt_ = 0;
 }
 
-void rel::set_name_(std::string inp) {
+void rel::SetName(std::string inp) {
   this->name_ = std::move(inp);
   std::transform(this->name_.begin(), this->name_.end(), this->name_.begin(), ::toupper);
   table_schema.TableName2Table[this->name_] = this;
@@ -113,7 +113,7 @@ void rel::add_column(const column &inp_column) {
   this->cols_.push_back(inp_column);
 }
 
-bool rel::set_scheme_(storageMethod method) {
+bool rel::SetScheme(storageMethod method) {
   if (this->cols_.empty() and this->rows_.empty()) {
 	this->storage_method_ = method;
 	return true;
@@ -172,7 +172,7 @@ rel::rel(const std::string &name) {
   this->relId_ = std::time(nullptr);
   table_schema.TableID2Table[this->relId_] = this;
   table_schema.Table2IDName[this] = std::tie(this->relId_, "No Name");
-  this->set_name_(name);
+  this->SetName(name);
 }
 size_t rel::GetOffset(const std::string &col_name) {
   std::vector<size_t> sizes = this->GetColSizes();

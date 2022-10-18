@@ -54,8 +54,8 @@ int main() {
   parser p;
 
   rel table1, table2;
-  table1.set_name_("table1");
-  table2.set_name_("table2");
+  table1.SetName("table1");
+  table2.SetName("table2");
   table1.add_column("relId_", sizeof(int), typeid(int));
   table1.add_column("content", 4, typeid(std::string));
   table2.add_column("relId_", sizeof(int), typeid(int));

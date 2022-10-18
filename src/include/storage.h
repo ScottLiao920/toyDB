@@ -117,8 +117,8 @@ class rel {
   explicit rel(const std::string &);
 //  rel(std::vector<std::toyDBTUPLE(size_t, std::string)>);
   storageMethod getStorageMethod() { return this->storage_method_; };
-  bool set_scheme_(storageMethod);
-  void set_name_(std::string);
+  bool SetScheme(storageMethod);
+  void SetName(std::string);
   void add_rows(std::vector<row>);
   void add_rows(const std::vector<size_t> &);
   void add_row(const row &);

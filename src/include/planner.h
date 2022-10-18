@@ -21,6 +21,7 @@ class planner {
  private:
   std::vector<std::tuple<planTree *, size_t>> trees;
   planTree *cheapest_tree_;
+  bufferPoolManager bpmgr_;
  public:
   friend class parser;
   planner() = default;

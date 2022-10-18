@@ -7,6 +7,7 @@
 //
 
 #include "planner.h"
+#include "schema.h"
 
 std::vector<executor *> plan_join(expr *expression) {
   //TODO;
@@ -41,6 +42,7 @@ std::vector<executor *> plan_node(expr *expression) {
 	  // TODO: initialize with enough data
 	  // Think: what if this col is from a joined view? Should have a in-memory data structure for tables?
 	  auto seqSE = new seqScanExecutor;
+	  seqSE->Init(table_schema.TableID2Table[std::get<0>(expression->data_srcs[0])], nullptr, nullptr);
 	  out.push_back((executor *)seqSE);
 	  auto idxSE = new indexScanExecutor;
 	  out.push_back((executor *)idxSE);
@@ -56,7 +58,6 @@ void planner::plan(queryTree *query_tree) {
   /*
    * This method generate root based on target list, then iteratively go thru all qualifications & generate plan on then recursively
    */
-  // TODO:think about how to generate multiple plans at once; This method should call a recursive planning method on each node;
   auto cur_plan = new planTree;
   cur_plan->root = (executor *)new selectExecutor;
   for (auto it : query_tree->target_list_) {

@@ -41,6 +41,10 @@ enum command_type {
   INVALID_COMMAND
 };
 
+enum ParseNodeType {
+  SelectNode, JoinNode, ScanNode, AggrNode, UpdateNode, CompNode,EmptyNode
+};
+
 enum comparision {
   equal,
   lt,

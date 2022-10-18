@@ -69,6 +69,8 @@ class bufferPoolManager {
 
   void readFromDisk(PhysicalPageID);
 
+  void readFromExecutor(RelID);
+
   void allocateInMemoryView(RelID);
 
   void writeToDisk(PhysicalPageID, size_t);
