@@ -16,14 +16,16 @@ void executor::Init() {
   std::memset(this->mem_context_, 0, EXEC_MEM);
   this->mode_ = volcano;
   this->free_spaces_[this->mem_context_] = EXEC_MEM;
-  rel *view_ = new rel;
+  this->view_ = new rel;
 }
 char *executor::talloc(size_t size) {
   for (auto it : this->free_spaces_) {
 	if (it.second >= size) {
 	  this->free_spaces_.erase(it.first);
-	  this->free_spaces_.insert({it.first + size, it.second - size});
 	  this->allocated_spaces[it.first] = size;
+	  if (it.second != size) {
+		this->free_spaces_.insert({it.first + size, it.second - size});
+	  }
 	  return it.first;
 	}
   }
@@ -71,7 +73,7 @@ void scanExecutor::SetMode(execution_mode mode) {
 void scanExecutor::SetTable(rel *tab) {
   this->table_ = tab;
 }
-void scanExecutor::SetBufferPoolManager(bufferPoolManager *manager) {
+void executor::SetBufferPoolManager(bufferPoolManager *manager) {
   this->bpmgr_ = manager;
 }
 void createExecutor::Init() {
@@ -85,7 +87,8 @@ void seqScanExecutor::Init(rel *tab, bufferPoolManager *manager, comparison_expr
   executor::Init();
   this->table_ = tab;
   this->bpmgr_ = manager;
-  this->view_->SetName("Seq Scan View for Tab " + tab->GetName());
+  std::string view_name = "Seq Scan View for Tab " + tab->GetName();
+  this->view_->SetName(view_name);
   this->qual_ = qual;
   this->cnt_ = 0;
   this->pages_ = this->table_->get_location();
@@ -128,7 +131,7 @@ void seqScanExecutor::Next(void *dst) {
 	toyDBTUPLE tmp((char *)buf, len, sizes, type_ids);
 	tmp.table_ = std::get<0>(table_schema.Table2IDName[this->table_]);
 	// Verify comparison expression
-	if (this->qual_->compareFunc((char *)buf + offset, (char *)rhs)) {
+	if (this->qual_ == nullptr || this->qual_->compareFunc((char *)buf + offset, (char *)rhs)) {
 	  ((std::vector<toyDBTUPLE> *)dst)->at(0) = tmp;
 	  ++this->cnt_;
 	}
@@ -306,8 +309,8 @@ void nestedLoopJoinExecutor::Next(void *dst) {
 	size_t r_col_offset = r_tab->GetOffset(col_name);
 //		  std::cout << "Comparing " << (int)*(left.content_ + l_col_offset) << " from left side with "
 //					<< (int)*(right.content_ + r_col_offset) << " from right side" << std::endl;
-	if (this->pred_->compareFunc(this->curLeftTuple_->content_ + l_col_offset,
-								 this->curRightTuple_->content_ + r_col_offset)) {
+	if (this->pred_ == nullptr || this->pred_->compareFunc(this->curLeftTuple_->content_ + l_col_offset,
+														   this->curRightTuple_->content_ + r_col_offset)) {
 	  // pass predicate, join this two tuple tgt
 	  toyDBTUPLE *tup = this->Join(this->curLeftTuple_.base(), this->curRightTuple_.base(), col_name);
 	  ((std::vector<toyDBTUPLE> *)dst)->at(cnt) = *tup;

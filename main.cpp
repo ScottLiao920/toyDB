@@ -9,6 +9,7 @@
 #include "executor.h"
 #include "btree.h"
 #include "type.h"
+#include "planner.h"
 
 void testBTree() {
   bTree<int> t(3);
@@ -52,6 +53,8 @@ int main() {
 //  std::cout << dst << std::endl;
 
   parser p;
+  planner o;
+  o.SetBufferPoolManager(&bpmgr);
 
   rel table1, table2;
   table1.SetName("table1");
@@ -60,8 +63,6 @@ int main() {
   table1.add_column("content", 4, typeid(std::string));
   table2.add_column("relId_", sizeof(int), typeid(int));
   table2.add_column("content", 4, typeid(std::string));
-  p.parse("SELECT SUM(table1.relId_) as fck, table1.content from table1, table2 where table1.relId_ = table2.relId_ and table 2.col2 < 100");
-
   int id = 0;
   std::string tmp_string("A");
   for (unsigned int i = 0; i < 100; ++i) {
@@ -86,6 +87,11 @@ int main() {
 	table2.update_row(&bpmgr, i, buf); // store table1 in physical page id 1
 	++id;
   }
+
+  p.parse(
+	  "SELECT table1.relId_, table1.content, table2.content from table1, table2 where table1.relId_ = table2.relId_ and table 2.col2 < 100");
+  o.plan(&p.stmt_tree_);
+
   comparison_expr qual1;
   qual1.comparision_type = comparision::ngt;
   qual1.data_srcs.emplace_back(parser::processDataSrc("TABLE1.RELID_"));
@@ -101,6 +107,7 @@ int main() {
   nested_loop_join_executor.SetLeft(&seq_scan_executor_tab1);
   nested_loop_join_executor.SetRight(&seq_scan_executor_tab2);
   nested_loop_join_executor.Init();
+  nested_loop_join_executor.SetBufferPoolManager(&bpmgr);
   comparison_expr join_predicate;
   join_predicate.comparision_type = comparision::equal;
   join_predicate.data_srcs.emplace_back(parser::processDataSrc("TABLE1.RELID_"));

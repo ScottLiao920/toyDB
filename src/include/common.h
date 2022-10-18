@@ -42,7 +42,7 @@ enum command_type {
 };
 
 enum ParseNodeType {
-  SelectNode, JoinNode, ScanNode, AggrNode, UpdateNode, CompNode,EmptyNode
+  SelectNode, JoinNode, ScanNode, AggrNode, UpdateNode, CompNode, EmptyNode
 };
 
 enum comparision {

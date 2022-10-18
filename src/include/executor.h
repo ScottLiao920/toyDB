@@ -33,6 +33,7 @@ class executor {
   char *talloc(size_t);
   void tfree(char *, size_t);
   void tfree(char *);
+  void SetBufferPoolManager(bufferPoolManager *);
 };
 
 class scanExecutor : public executor {
@@ -44,7 +45,6 @@ class scanExecutor : public executor {
   void Init() override = 0;
   void SetMode(execution_mode);
   void SetTable(rel *);
-  void SetBufferPoolManager(bufferPoolManager *);
   std::string GetTableName() { return this->table_->GetName(); }
   size_t GetTableID() { return this->table_->GetID(); }
   void SetQual(comparison_expr *qual) { this->qual_ = qual; }
@@ -81,7 +81,7 @@ class bitMapIndexScanExecutor : scanExecutor {
   void End() override {};
 };
 
-class joinExecutor : protected executor {
+class joinExecutor : public executor {
  protected:
   // abstract class for all join executors
   comparison_expr *pred_ = nullptr;
@@ -95,7 +95,7 @@ class joinExecutor : protected executor {
   toyDBTUPLE *Join(toyDBTUPLE *, toyDBTUPLE *, const std::string &);
 };
 
-class nestedLoopJoinExecutor : protected joinExecutor {
+class nestedLoopJoinExecutor : public joinExecutor {
  private:
   std::vector<toyDBTUPLE> curLeftBatch_;
   std::vector<toyDBTUPLE>::iterator curLeftTuple_;
@@ -105,7 +105,7 @@ class nestedLoopJoinExecutor : protected joinExecutor {
   void Init() override;
   void SetLeft(executor *left) { this->left_child_ = left; };
   void SetRight(executor *right) { this->right_child_ = right; };
-  void SetPredicate(comparison_expr *tmp) { this->pred_ = tmp; }
+  void SetPredicate(comparison_expr *tmp) { this->pred_ = tmp; };
   void Next(void *dst) override;
   void End() override;
 };
@@ -123,6 +123,8 @@ class mergeJoinExecutor : joinExecutor {
 };
 
 class aggregateExecutor : executor {
+ public:
+  executor *child_ = nullptr;
   void Init() override {};
   void Next(void *) override {};
   void End() override {};

@@ -21,12 +21,13 @@ class planner {
  private:
   std::vector<std::tuple<planTree *, size_t>> trees;
   planTree *cheapest_tree_;
-  bufferPoolManager bpmgr_;
+  bufferPoolManager *bpmgr_;
  public:
   friend class parser;
   planner() = default;
   void plan(queryTree *);
   void execute();
+  void SetBufferPoolManager(bufferPoolManager *buffer_pool_manager) { this->bpmgr_ = buffer_pool_manager; };
 };
 
 #endif //TOYDB_PLANNER_H
