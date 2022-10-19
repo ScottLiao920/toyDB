@@ -8,9 +8,11 @@
 #include "executor.h"
 
 #include <utility>
+#include <iomanip>
 #include "btree.h"
 #include "common.h"
 #include "schema.h"
+#include "type.h"
 
 void executor::Init() {
   std::memset(this->mem_context_, 0, EXEC_MEM);
@@ -87,8 +89,7 @@ void seqScanExecutor::Init(rel *tab, bufferPoolManager *manager, comparison_expr
   executor::Init();
   this->table_ = tab;
   this->bpmgr_ = manager;
-  std::string view_name = "Seq Scan View for Tab " + tab->GetName();
-  this->view_->SetName(view_name);
+  this->view_->SetName("Seq Scan View for Tab " + tab->GetName());
   this->qual_ = qual;
   this->cnt_ = 0;
   this->pages_ = this->table_->get_location();
@@ -117,6 +118,7 @@ void seqScanExecutor::Next(void *dst) {
 		// One past the last toyDBTuple
 		// write an empty tuple to dst
 		toyDBTUPLE tmp;
+		tmp.table_ = this->view_->GetID();
 		((std::vector<toyDBTUPLE> *)dst)->at(0) = tmp;
 		tfree(buf);
 		return;
@@ -129,7 +131,7 @@ void seqScanExecutor::Next(void *dst) {
 	std::memcpy(buf, data_ptr, len);
 	auto type_ids = this->table_->GetTypeIDs();
 	toyDBTUPLE tmp((char *)buf, len, sizes, type_ids);
-	tmp.table_ = std::get<0>(table_schema.Table2IDName[this->table_]);
+	tmp.table_ = this->view_->GetID();
 	// Verify comparison expression
 	if (this->qual_ == nullptr || this->qual_->type == COL
 		|| this->qual_->compareFunc((char *)buf + offset, (char *)rhs)) {
@@ -178,6 +180,7 @@ void indexExecutor::Init() {
 }
 void indexExecutor::Init(bufferPoolManager *bpmgr, rel *tab, size_t idx, index_type = btree) {
   executor::Init();
+  this->view_->SetName("Index Builder View for Tab " + tab->GetName());
   this->bpmgr_ = bpmgr;
   PhysicalPageID idx_page = bpmgr->stmgr_->addPage(); // allocate a new page for index
   bTree<int> tree(10);
@@ -221,27 +224,29 @@ void indexExecutor::Init(bufferPoolManager *bpmgr, rel *tab, size_t idx, index_t
 }
 void selectExecutor::Init(std::vector<expr *> exprs, std::vector<executor *> children) {
   executor::Init();
+  this->view_->SetName("Selection View" + children[0]->GetViewName());
   this->targetList_ = exprs;
   this->children_ = std::move(children);
 }
 void selectExecutor::Next(void *dst) {
-  if (this->cnt_ == 0){
-	std::cout << "    ";
+  if (this->cnt_ == 0) {
+	std::cout << std::setw(8) << " ";
 	for (auto it : this->targetList_) {
 	  std::cout << "|" << it->alias;
 	}
 	std::cout << std::endl;
   }
-  std::cout << "    ";
+  std::cout << std::setw(8) << this->cnt_;
   for (auto it : children_) {
-	auto *buf = new std::vector<toyDBTUPLE>;
+	auto *buf = new std::vector<toyDBTUPLE>(BATCH_SIZE);
 	it->Next(buf);
 	if (buf->empty()) {
 	  std::memset(dst, 0, sizeof(char));
 	  continue;
 	}
+	std::memset(dst, 1, sizeof(char));
 	if (this->mode_ == volcano) {
-	  size_t offset = 0;
+	  size_t offset = 0, cnt = 0;
 	  for (auto col_size : buf->cbegin()->sizes_) {
 		// TODO: validate targetList on tmp_buf here
 		if (col_size == 0) {
@@ -250,25 +255,27 @@ void selectExecutor::Next(void *dst) {
 		}
 		char tmp_buf[col_size];
 		std::memcpy(tmp_buf, buf->cbegin()->content_ + offset, col_size);
-		switch (1) {//type_schema.typeID2type[table1.cols_[col_id].typeid_]) {
+		std::cout << "|" << std::setw(this->targetList_[cnt]->alias.size());
+		switch (type_schema.typeID2type[buf->at(0).type_ids_[cnt]]) {
 		  case (1): {
-			std::cout << "|" << (int)*tmp_buf;
+			std::cout << (int)*tmp_buf;
 			break;
 		  }
 		  case (2): {
-			std::cout << "|" << (float)*tmp_buf;
+			std::cout << (float)*tmp_buf;
 			break;
 		  }
 		  case (3): {
-			std::cout << "|" << (size_t)*tmp_buf;
+			std::cout << (size_t)*tmp_buf;
 			break;
 		  }
 		  case (4): {
-			std::cout << "|" << *tmp_buf;
+			std::cout << std::string(tmp_buf);
 			break;
 		  }
 		}
 		offset += col_size;
+		++cnt;
 	  }
 	} else {
 	  //TODO: For batched execution
@@ -286,6 +293,8 @@ void selectExecutor::Init() {
 }
 void nestedLoopJoinExecutor::Init() {
   executor::Init();
+  this->view_->SetName("Nested Loop Join View for Tab {" + this->left_child_->GetViewName() + "} and {"
+						   + this->right_child_->GetViewName() + "}");
   this->curLeftBatch_ = std::vector<toyDBTUPLE>(BATCH_SIZE);
   this->curRightBatch_ = std::vector<toyDBTUPLE>(BATCH_SIZE);
   this->left_child_->Next(&this->curLeftBatch_);
@@ -316,6 +325,7 @@ void nestedLoopJoinExecutor::Next(void *dst) {
 														   this->curRightTuple_->content_ + r_col_offset)) {
 	  // pass predicate, join this two tuple tgt
 	  toyDBTUPLE *tup = this->Join(this->curLeftTuple_.base(), this->curRightTuple_.base(), col_name);
+	  tup->table_ = this->view_->GetID();
 	  ((std::vector<toyDBTUPLE> *)dst)->at(cnt) = *tup;
 	  ++cnt;
 	}

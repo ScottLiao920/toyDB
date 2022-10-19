@@ -72,7 +72,7 @@ void rel::SetName(std::string inp) {
   this->name_ = std::move(inp);
   std::transform(this->name_.begin(), this->name_.end(), this->name_.begin(), ::toupper);
   table_schema.TableName2Table[this->name_] = this;
-  table_schema.Table2IDName[this] = std::tie(this->relId_, inp);
+  table_schema.Table2IDName[this] = std::tie(this->relId_, this->name_);
 }
 
 void rel::add_rows(std::vector<row> inp_rows) {
@@ -165,11 +165,17 @@ std::vector<size_t> rel::GetColSizes() {
 }
 rel::rel() {
   this->relId_ = std::time(nullptr);
+  while (table_schema.TableID2Table.find(this->relId_) != table_schema.TableID2Table.end()) {
+	this->relId_ = std::time(nullptr);
+  }
   table_schema.TableID2Table[this->relId_] = this;
   table_schema.Table2IDName[this] = std::tie(this->relId_, "No Name");
 }
 rel::rel(const std::string &name) {
   this->relId_ = std::time(nullptr);
+  while (table_schema.TableID2Table.find(this->relId_) != table_schema.TableID2Table.end()) {
+	this->relId_ = std::time(nullptr);
+  }
   table_schema.TableID2Table[this->relId_] = this;
   table_schema.Table2IDName[this] = std::tie(this->relId_, "No Name");
   this->SetName(name);

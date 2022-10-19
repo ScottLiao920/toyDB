@@ -48,7 +48,7 @@ std::vector<executor *> plan_join(parseNode *parse_node, bufferPoolManager *buff
   std::vector<executor *> out;
   switch (parse_node->child_->type_) {
 	case JoinNode: {
-	  auto join_plans = plan_join(parse_node, buffer_pool_manager);
+	  auto join_plans = plan_join(parse_node->child_, buffer_pool_manager);
 	  parseNode scan_node;
 	  if (parse_node->expression_->data_srcs[0] == parse_node->child_->expression_->data_srcs[0]
 		  || parse_node->expression_->data_srcs[0] == parse_node->child_->expression_->data_srcs[1]) {
@@ -198,15 +198,16 @@ void planner::plan(queryTree *query_tree) {
    * This method generate root based on target list, then iteratively go thru all qualifications & generate plan on then recursively
    */
   auto out = plan_node(query_tree->root_, this->bpmgr_);
+  size_t cur_min = 0xFFFFFFFF;
   for (auto tmp : out) {
 	auto cur_plan = new planTree;
-	cur_plan->root = (executor *)new selectExecutor;
-	((selectExecutor *)cur_plan->root)->addChild(tmp); // TODO: this should contain a complete plan tree
+	cur_plan->root = tmp; // TODO: this should contain a complete plan tree
 	this->trees.emplace_back(cur_plan, 0xFFFFFFFF);
+	this->cheapest_tree_ = cur_plan;
   }
 }
 void planner::execute() {
-  for (;;) {
+  while(true) {
 	char indicator[8];
 	this->cheapest_tree_->root->Next(indicator);
 	if (std::strcmp(indicator, "00000000") != 0) {

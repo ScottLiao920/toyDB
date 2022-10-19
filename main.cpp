@@ -91,66 +91,66 @@ int main() {
   p.parse(
 	  "SELECT table1.relId_, table1.content, table2.content from table1, table2 where table1.relId_ = table2.relId_ and table2.RELID_ < 100");
   o.plan(&p.stmt_tree_);
-
-  comparison_expr qual1;
-  qual1.comparision_type = comparision::ngt;
-  qual1.data_srcs.emplace_back(parser::processDataSrc("TABLE1.RELID_"));
-  qual1.data_srcs.emplace_back(parser::processDataSrc("50"));
-  comparison_expr qual2;
-  qual2.comparision_type = comparision::ngt;
-  qual2.data_srcs.emplace_back(parser::processDataSrc("TABLE2.RELID_"));
-  qual2.data_srcs.emplace_back(parser::processDataSrc("50"));
-  seqScanExecutor seq_scan_executor_tab1, seq_scan_executor_tab2;
-  seq_scan_executor_tab1.Init(&table1, &bpmgr, &qual1);
-  seq_scan_executor_tab2.Init(&table2, &bpmgr, &qual2);
-  nestedLoopJoinExecutor nested_loop_join_executor;
-  nested_loop_join_executor.SetLeft(&seq_scan_executor_tab1);
-  nested_loop_join_executor.SetRight(&seq_scan_executor_tab2);
-  nested_loop_join_executor.Init();
-  nested_loop_join_executor.SetBufferPoolManager(&bpmgr);
-  comparison_expr join_predicate;
-  join_predicate.comparision_type = comparision::equal;
-  join_predicate.data_srcs.emplace_back(parser::processDataSrc("TABLE1.RELID_"));
-  join_predicate.data_srcs.emplace_back(parser::processDataSrc("TABLE1.RELID_"));
-  nested_loop_join_executor.SetPredicate(&join_predicate);
-  for (unsigned int i = 0; i < 100; ++i) {
-	std::vector<toyDBTUPLE> tup(BATCH_SIZE);
-	nested_loop_join_executor.Next(&tup);
-	if (tup[0].content_ == nullptr) {
-	  continue;
-	}
-	size_t offset = 0;
-	size_t col_id = 0;
-	for (auto col_size : tup.cbegin()->sizes_) {
-	  if (col_size == 0) {
-		continue;
-	  }
-	  char tmp_buf[col_size];
-	  std::memcpy(tmp_buf, tup.cbegin()->content_ + offset, col_size);
-	  switch (type_schema.typeID2type[tup.begin()->type_ids_[col_id]]) {
-		case (1): {
-		  std::cout << "|" << (int)*tmp_buf;
-		  break;
-		}
-		case (2): {
-		  std::cout << "|" << (float)*tmp_buf;
-		  break;
-		}
-		case (3): {
-		  std::cout << "|" << (size_t)*tmp_buf;
-		  break;
-		}
-		case (4): {
-		  std::cout << "|" << std::string(tmp_buf);
-		  break;
-		}
-	  }
-	  offset += col_size;
-	  ++col_id;
-	}
-	std::cout << std::endl;
-  }
-  nested_loop_join_executor.End();
-//  testBTree();
+  o.execute();
+//  comparison_expr qual1;
+//  qual1.comparision_type = comparision::ngt;
+//  qual1.data_srcs.emplace_back(parser::processDataSrc("TABLE1.RELID_"));
+//  qual1.data_srcs.emplace_back(parser::processDataSrc("50"));
+//  comparison_expr qual2;
+//  qual2.comparision_type = comparision::ngt;
+//  qual2.data_srcs.emplace_back(parser::processDataSrc("TABLE2.RELID_"));
+//  qual2.data_srcs.emplace_back(parser::processDataSrc("50"));
+//  seqScanExecutor seq_scan_executor_tab1, seq_scan_executor_tab2;
+//  seq_scan_executor_tab1.Init(&table1, &bpmgr, &qual1);
+//  seq_scan_executor_tab2.Init(&table2, &bpmgr, &qual2);
+//  nestedLoopJoinExecutor nested_loop_join_executor;
+//  nested_loop_join_executor.SetLeft(&seq_scan_executor_tab1);
+//  nested_loop_join_executor.SetRight(&seq_scan_executor_tab2);
+//  nested_loop_join_executor.Init();
+//  nested_loop_join_executor.SetBufferPoolManager(&bpmgr);
+//  comparison_expr join_predicate;
+//  join_predicate.comparision_type = comparision::equal;
+//  join_predicate.data_srcs.emplace_back(parser::processDataSrc("TABLE1.RELID_"));
+//  join_predicate.data_srcs.emplace_back(parser::processDataSrc("TABLE1.RELID_"));
+//  nested_loop_join_executor.SetPredicate(&join_predicate);
+//  for (unsigned int i = 0; i < 100; ++i) {
+//	std::vector<toyDBTUPLE> tup(BATCH_SIZE);
+//	nested_loop_join_executor.Next(&tup);
+//	if (tup[0].content_ == nullptr) {
+//	  continue;
+//	}
+//	size_t offset = 0;
+//	size_t col_id = 0;
+//	for (auto col_size : tup.cbegin()->sizes_) {
+//	  if (col_size == 0) {
+//		continue;
+//	  }
+//	  char tmp_buf[col_size];
+//	  std::memcpy(tmp_buf, tup.cbegin()->content_ + offset, col_size);
+//	  switch (type_schema.typeID2type[tup.begin()->type_ids_[col_id]]) {
+//		case (1): {
+//		  std::cout << "|" << (int)*tmp_buf;
+//		  break;
+//		}
+//		case (2): {
+//		  std::cout << "|" << (float)*tmp_buf;
+//		  break;
+//		}
+//		case (3): {
+//		  std::cout << "|" << (size_t)*tmp_buf;
+//		  break;
+//		}
+//		case (4): {
+//		  std::cout << "|" << std::string(tmp_buf);
+//		  break;
+//		}
+//	  }
+//	  offset += col_size;
+//	  ++col_id;
+//	}
+//	std::cout << std::endl;
+//  }
+//  nested_loop_join_executor.End();
+////  testBTree();
   return 0;
 }
