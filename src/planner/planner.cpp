@@ -7,6 +7,8 @@
 //
 
 #include "planner.h"
+
+#include <utility>
 #include "schema.h"
 
 std::vector<executor *> plan_scan(parseNode *parse_node, bufferPoolManager *buffer_pool_manager);
@@ -15,24 +17,28 @@ parseNode generate_scan_node(std::tuple<size_t, size_t, size_t, std::string> dat
   parseNode left_scan_node;
   left_scan_node.type_ = ScanNode;
   left_scan_node.expression_ = new expr;
-  left_scan_node.expression_->data_srcs = {data_src};
+  left_scan_node.expression_->data_srcs = {std::move(data_src)};
   left_scan_node.expression_->type = COL;
   return left_scan_node;
 }
 
 std::vector<executor *> get_all_join_plans(executor *left,
 										   executor *right,
-										   bufferPoolManager *buffer_pool_manager) {
+										   bufferPoolManager *buffer_pool_manager,
+										   comparison_expr *join_predicate) {
   auto nlj1 = new nestedLoopJoinExecutor;
   auto nlj2 = new nestedLoopJoinExecutor;
   nlj1->SetLeft(left);
   nlj1->SetRight(right);
   nlj1->Init();
   nlj1->SetBufferPoolManager(buffer_pool_manager);
+  nlj1->SetPredicate(join_predicate);
+
   nlj2->SetLeft(right);
   nlj2->SetRight(left);
   nlj2->Init();
   nlj2->SetBufferPoolManager(buffer_pool_manager);
+  nlj2->SetPredicate(join_predicate);
   // Hash join & merge join to be implemented.
   return {nlj1, nlj2};
 }
@@ -56,7 +62,10 @@ std::vector<executor *> plan_join(parseNode *parse_node, bufferPoolManager *buff
 	  // combination of join plans and scan plans
 	  for (auto it : scan_plans) {
 		for (auto it2 : join_plans) {
-		  for (auto plan : (get_all_join_plans(it, it2, buffer_pool_manager))) {
+		  for (auto plan : (get_all_join_plans(it,
+											   it2,
+											   buffer_pool_manager,
+											   (comparison_expr *)parse_node->expression_))) {
 			out.push_back(plan);
 		  }
 		}
@@ -80,7 +89,10 @@ std::vector<executor *> plan_join(parseNode *parse_node, bufferPoolManager *buff
 	  }
 	  for (auto it : left_scan_plans) {
 		for (auto it2 : right_scan_plans) {
-		  for (auto plan : (get_all_join_plans(it, it2, buffer_pool_manager))) {
+		  for (auto plan : (get_all_join_plans(it,
+											   it2,
+											   buffer_pool_manager,
+											   (comparison_expr *)parse_node->expression_))) {
 			out.push_back(plan);
 		  }
 		}
@@ -95,7 +107,10 @@ std::vector<executor *> plan_join(parseNode *parse_node, bufferPoolManager *buff
 	  auto right_scan_plans = plan_scan(&right_scan_node, buffer_pool_manager);
 	  for (auto it : left_scan_plans) {
 		for (auto it2 : right_scan_plans) {
-		  for (auto plan : (get_all_join_plans(it, it2, buffer_pool_manager))) {
+		  for (auto plan : (get_all_join_plans(it,
+											   it2,
+											   buffer_pool_manager,
+											   (comparison_expr *)parse_node->expression_))) {
 			out.push_back(plan);
 		  }
 		}
@@ -114,20 +129,20 @@ std::vector<executor *> plan_scan(parseNode *parse_node, bufferPoolManager *buff
 			  buffer_pool_manager,
 			  nullptr);
   out.push_back((executor *)seqSE);
-  auto idxSE = new indexScanExecutor;
-  out.push_back((executor *)idxSE);
-  auto bmiSE = new bitMapIndexScanExecutor;
-  out.push_back((executor *)bmiSE);
+//  auto idxSE = new indexScanExecutor;
+//  out.push_back((executor *)idxSE);
+//  auto bmiSE = new bitMapIndexScanExecutor;
+//  out.push_back((executor *)bmiSE);
   for (auto it : out) {
 	if (((scanExecutor *)it)->GetTableID() == std::get<0>(parse_node->expression_->data_srcs[0])) {
 	  ((scanExecutor *)it)->SetQual((comparison_expr *)parse_node->expression_);
-	  break;
 	}
   }
   return out;
 }
 
 std::vector<executor *> plan_node(parseNode *parse_node, bufferPoolManager *buffer_pool_manager) {
+  // Should an executor's data_src located at its child executor's view?
   if (parse_node == nullptr || parse_node->type_ == EmptyNode) {
 	return {};
   }
@@ -182,11 +197,12 @@ void planner::plan(queryTree *query_tree) {
   /*
    * This method generate root based on target list, then iteratively go thru all qualifications & generate plan on then recursively
    */
-  auto cur_plan = new planTree;
-  cur_plan->root = (executor *)new selectExecutor;
   auto out = plan_node(query_tree->root_, this->bpmgr_);
   for (auto tmp : out) {
+	auto cur_plan = new planTree;
+	cur_plan->root = (executor *)new selectExecutor;
 	((selectExecutor *)cur_plan->root)->addChild(tmp); // TODO: this should contain a complete plan tree
+	this->trees.emplace_back(cur_plan, 0xFFFFFFFF);
   }
 }
 void planner::execute() {

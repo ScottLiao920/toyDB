@@ -131,7 +131,8 @@ void seqScanExecutor::Next(void *dst) {
 	toyDBTUPLE tmp((char *)buf, len, sizes, type_ids);
 	tmp.table_ = std::get<0>(table_schema.Table2IDName[this->table_]);
 	// Verify comparison expression
-	if (this->qual_ == nullptr || this->qual_->compareFunc((char *)buf + offset, (char *)rhs)) {
+	if (this->qual_ == nullptr || this->qual_->type == COL
+		|| this->qual_->compareFunc((char *)buf + offset, (char *)rhs)) {
 	  ((std::vector<toyDBTUPLE> *)dst)->at(0) = tmp;
 	  ++this->cnt_;
 	}
@@ -222,13 +223,15 @@ void selectExecutor::Init(std::vector<expr *> exprs, std::vector<executor *> chi
   executor::Init();
   this->targetList_ = exprs;
   this->children_ = std::move(children);
-  std::cout << "    ";
-  for (auto it : exprs) {
-	std::cout << "|" << it->alias;
-  }
-  std::cout << std::endl;
 }
 void selectExecutor::Next(void *dst) {
+  if (this->cnt_ == 0){
+	std::cout << "    ";
+	for (auto it : this->targetList_) {
+	  std::cout << "|" << it->alias;
+	}
+	std::cout << std::endl;
+  }
   std::cout << "    ";
   for (auto it : children_) {
 	auto *buf = new std::vector<toyDBTUPLE>;

@@ -65,7 +65,7 @@ class seqScanExecutor : public scanExecutor {
   void End() override;
 };
 
-class indexScanExecutor : scanExecutor {
+class indexScanExecutor : public scanExecutor {
   RelID idx_table_;
  public:
   void Init() override {};
@@ -73,7 +73,7 @@ class indexScanExecutor : scanExecutor {
   void End() override {};
 };
 
-class bitMapIndexScanExecutor : scanExecutor {
+class bitMapIndexScanExecutor : public scanExecutor {
   RelID idx_table_;
  public:
   void Init() override {};
