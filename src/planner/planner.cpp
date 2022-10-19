@@ -30,15 +30,15 @@ std::vector<executor *> get_all_join_plans(executor *left,
   auto nlj2 = new nestedLoopJoinExecutor;
   nlj1->SetLeft(left);
   nlj1->SetRight(right);
-  nlj1->Init();
   nlj1->SetBufferPoolManager(buffer_pool_manager);
   nlj1->SetPredicate(join_predicate);
+  nlj1->Init();
 
   nlj2->SetLeft(right);
   nlj2->SetRight(left);
-  nlj2->Init();
   nlj2->SetBufferPoolManager(buffer_pool_manager);
   nlj2->SetPredicate(join_predicate);
+  nlj2->Init();
   // Hash join & merge join to be implemented.
   return {nlj1, nlj2};
 }
@@ -207,7 +207,7 @@ void planner::plan(queryTree *query_tree) {
   }
 }
 void planner::execute() {
-  while(true) {
+  while (true) {
 	char indicator[8];
 	this->cheapest_tree_->root->Next(indicator);
 	if (std::strcmp(indicator, "00000000") != 0) {

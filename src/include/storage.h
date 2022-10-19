@@ -81,6 +81,7 @@ class column {
   size_t cnt_;
   RelID rel_;
  public:
+  void SetName(std::string inp) { this->name_ = std::move(inp); }
   size_t getSize() { return this->width_; }
   std::string getName() { return this->name_; }
   column(std::string, size_t, RelID, const std::type_info &);

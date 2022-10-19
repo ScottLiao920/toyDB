@@ -14,6 +14,17 @@
 #include "schema.h"
 #include "type.h"
 
+// copied from parser.cpp. may be should have another util header for these kinda stuff
+void split_1(std::string inp, std::string delim, std::vector<std::string> &out) {
+  std::regex tmp = std::regex(delim);
+  std::sregex_token_iterator it(inp.begin(), inp.end(), tmp, -1);
+  std::sregex_token_iterator end;
+  for (; it != end; ++it) {
+	out.emplace_back(*it);
+  }
+//  std::copy(it, end, out.begin());
+}
+
 void executor::Init() {
   std::memset(this->mem_context_, 0, EXEC_MEM);
   this->mode_ = volcano;
@@ -90,6 +101,7 @@ void seqScanExecutor::Init(rel *tab, bufferPoolManager *manager, comparison_expr
   this->table_ = tab;
   this->bpmgr_ = manager;
   this->view_->SetName("Seq Scan View for Tab " + tab->GetName());
+  this->view_->cols_ = tab->cols_;
   this->qual_ = qual;
   this->cnt_ = 0;
   this->pages_ = this->table_->get_location();
@@ -181,6 +193,7 @@ void indexExecutor::Init() {
 void indexExecutor::Init(bufferPoolManager *bpmgr, rel *tab, size_t idx, index_type = btree) {
   executor::Init();
   this->view_->SetName("Index Builder View for Tab " + tab->GetName());
+  this->view_->cols_ = tab->cols_;
   this->bpmgr_ = bpmgr;
   PhysicalPageID idx_page = bpmgr->stmgr_->addPage(); // allocate a new page for index
   bTree<int> tree(10);
@@ -225,6 +238,9 @@ void indexExecutor::Init(bufferPoolManager *bpmgr, rel *tab, size_t idx, index_t
 void selectExecutor::Init(std::vector<expr *> exprs, std::vector<executor *> children) {
   executor::Init();
   this->view_->SetName("Selection View" + children[0]->GetViewName());
+  for (auto it : exprs) {
+	this->view_->cols_.push_back(table_schema.TableID2Table[std::get<0>(it->data_srcs[0])]->cols_[std::get<1>(it->data_srcs[0])]);
+  }
   this->targetList_ = exprs;
   this->children_ = std::move(children);
 }
@@ -295,6 +311,24 @@ void nestedLoopJoinExecutor::Init() {
   executor::Init();
   this->view_->SetName("Nested Loop Join View for Tab {" + this->left_child_->GetViewName() + "} and {"
 						   + this->right_child_->GetViewName() + "}");
+  this->view_->cols_ = table_schema.TableName2Table[this->left_child_->GetViewName()]->cols_;
+  for (auto &it : this->view_->cols_) {
+	it.SetName(this->left_child_->GetViewName() + '.' + it.getName());
+  }
+  std::vector<std::string> tmp;
+  std::string
+	  left_col = std::get<3>(this->pred_->data_srcs[0]).substr(std::get<3>(this->pred_->data_srcs[0]).find(".") + 1);
+  std::string
+	  right_col = std::get<3>(this->pred_->data_srcs[1]).substr(std::get<3>(this->pred_->data_srcs[0]).find(".") + 1);
+  for (auto it : table_schema.TableName2Table[this->right_child_->GetViewName()]->cols_) {
+	std::string upp_name = it.getName();
+	std::transform(upp_name.begin(), upp_name.end(), upp_name.begin(), ::toupper);
+	if (upp_name != left_col && upp_name != right_col) {
+//	  std::string tmp_name = this->right_child_->GetViewName() + '.' + it.getName();
+	  this->view_->cols_.push_back(it);
+	  this->view_->cols_.back().SetName(this->right_child_->GetViewName() + '.' + it.getName());
+	}
+  }
   this->curLeftBatch_ = std::vector<toyDBTUPLE>(BATCH_SIZE);
   this->curRightBatch_ = std::vector<toyDBTUPLE>(BATCH_SIZE);
   this->left_child_->Next(&this->curLeftBatch_);
