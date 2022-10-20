@@ -26,6 +26,7 @@ class planner {
   friend class parser;
   planner() = default;
   void plan(queryTree *);
+  void Init();
   void execute();
   void SetBufferPoolManager(bufferPoolManager *buffer_pool_manager) { this->bpmgr_ = buffer_pool_manager; };
 };

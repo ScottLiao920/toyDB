@@ -91,6 +91,7 @@ int main() {
   p.parse(
 	  "SELECT table1.relId_, table1.content, table2.content from table1, table2 where table1.relId_ = table2.relId_ and table2.RELID_ < 100");
   o.plan(&p.stmt_tree_);
+  o.Init();
   o.execute();
 //  comparison_expr qual1;
 //  qual1.comparision_type = comparision::ngt;

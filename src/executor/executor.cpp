@@ -189,6 +189,17 @@ void seqScanExecutor::Reset() {
   }
   this->cnt_ = 0;
 }
+void seqScanExecutor::Init() {
+  executor::Init();
+  this->view_->SetName("Seq Scan View for Tab " + this->table_->GetName());
+  this->view_->cols_ = this->table_->cols_; // Scan executors are leaf executors so no need to set column sources again.
+  this->cnt_ = 0;
+  this->pages_ = this->table_->get_location();
+  if (this->bpmgr_->findPage(this->pages_[0]) == nullptr) {
+	this->bpmgr_->readFromDisk(this->pages_[0]);
+  }
+  this->mem_ptr_ = this->bpmgr_->findPage(this->pages_[0])->content;
+}
 void indexExecutor::Init() {
   executor::Init();
 }
@@ -239,6 +250,9 @@ void indexExecutor::Init(bufferPoolManager *bpmgr, rel *tab, size_t idx, index_t
 }
 void selectExecutor::Init(std::vector<expr *> exprs, std::vector<executor *> children) {
   executor::Init();
+  for (auto child : this->children_) {
+	child->Init();
+  }
   this->view_->SetName("Selection View" + children[0]->GetViewName());
   for (auto it : exprs) {
 	this->view_->cols_.push_back(table_schema.TableID2Table[std::get<0>(it->data_srcs[0])]->cols_[std::get<1>(it->data_srcs[0])]);
@@ -257,17 +271,17 @@ void selectExecutor::Next(void *dst) {
 	}
 	std::cout << std::endl;
   }
-  std::cout << std::setw(8) << this->cnt_;
   for (auto it : children_) {
 	auto *buf = new std::vector<toyDBTUPLE>(BATCH_SIZE);
 	it->Next(buf);
 	if (buf->empty()) {
-	  std::memset(dst, 0, sizeof(char));
-	  continue;
+	  std::memset(dst, 0, 8);
+	  return;
 	}
-	std::memset(dst, 1, sizeof(char));
+	std::cout << std::setw(8) << this->cnt_;
+	std::memset(dst, 0x11, 8);
 	if (this->mode_ == volcano) {
-	  size_t offset = 0, cnt = 0;
+	  size_t cnt = 0;
 	  for (auto col_size : this->view_->GetColSizes()) {
 		// TODO: validate targetList on tmp_buf here
 		if (col_size == 0) {
@@ -308,7 +322,6 @@ void selectExecutor::Next(void *dst) {
 			break;
 		  }
 		}
-		offset += col_size;
 		++cnt;
 	  }
 	} else {
@@ -320,13 +333,24 @@ void selectExecutor::Next(void *dst) {
   this->cnt_ += 1;
 }
 void selectExecutor::End() {
-  std::cout << "Output " << this->cnt_ << "tuples." << std::endl;
+  for (auto it : this->children_) {
+	it->End();
+  }
+  std::cout << "Output " << this->cnt_ << " tuples." << std::endl;
 }
 void selectExecutor::Init() {
   executor::Init();
+  for (auto child : this->children_) { child->Init(); }
+  this->view_->SetName("Selection View" + this->children_[0]->GetViewName());
+  for (auto it : this->targetList_) {
+	this->view_->cols_.push_back(table_schema.TableID2Table[std::get<0>(it->data_srcs[0])]->cols_[std::get<1>(it->data_srcs[0])]);
+  }
+
 }
 void nestedLoopJoinExecutor::Init() {
   executor::Init();
+  this->left_child_->Init();
+  this->right_child_->Init();
   this->view_->SetName("Nested Loop Join View for Tab {" + this->left_child_->GetViewName() + "} and {"
 						   + this->right_child_->GetViewName() + "}");
   this->view_->cols_ = table_schema.TableName2Table[this->left_child_->GetViewName()]->cols_;
@@ -358,6 +382,11 @@ void nestedLoopJoinExecutor::Init() {
 }
 void nestedLoopJoinExecutor::Next(void *dst) {
   size_t cnt = 0;
+  if (this->curLeftTuple_->content_ == nullptr) {
+	// All tuple emitted. Set dst to an empty vector
+	((std::vector<toyDBTUPLE> *)dst)->clear();
+	return;
+  }
   for (;;) {
 	// for every left tuple, iterate thru all right tuples, stops when BATCH_SIZE of tuples found or all scanned.
 

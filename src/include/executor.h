@@ -60,7 +60,7 @@ class seqScanExecutor : public scanExecutor {
   char *mem_ptr_ = nullptr;
   std::vector<PhysicalPageID> pages_;
  public:
-  void Init() override {};
+  void Init() override;
   void Init(rel *, bufferPoolManager *, comparison_expr *);
   void Next(void *dst) override;
   void Reset();
@@ -178,6 +178,7 @@ class selectExecutor : executor {
  public:
   void Init() override;
   void addChild(executor *exec) { this->children_.push_back(exec); };
+  void addTarget(expr *target) { this->targetList_.push_back(target); };
   void Init(std::vector<expr *>, std::vector<executor *>);
   void Next(void *) override;
   void End() override;

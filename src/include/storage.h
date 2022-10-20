@@ -63,8 +63,9 @@ class toyDBTUPLE {
   std::vector<size_t> sizes_; // sizes of individual columns, the sum of this vector should equal to size_
   std::vector<size_t> type_ids_; // typeid of col types
   toyDBTUPLE() {
-	this->table_ = INVALID_PHYSICAL_PAGE_ID;
+	this->table_ = INVALID_RELID;
 	this->row_ = INVALID_PHYSICAL_PAGE_ID;
+	this->ancestor_ = INVALID_RELID;
 	this->content_ = nullptr;
 	this->size_ = 0;
 	this->sizes_ = std::vector<size_t>();

@@ -32,13 +32,13 @@ std::vector<executor *> get_all_join_plans(executor *left,
   nlj1->SetRight(right);
   nlj1->SetBufferPoolManager(buffer_pool_manager);
   nlj1->SetPredicate(join_predicate);
-  nlj1->Init();
+//  nlj1->Init(); // Init will trigger Next() of left & right child
 
   nlj2->SetLeft(right);
   nlj2->SetRight(left);
   nlj2->SetBufferPoolManager(buffer_pool_manager);
   nlj2->SetPredicate(join_predicate);
-  nlj2->Init();
+//  nlj2->Init(); // Init will trigger Next() of left & right child
   // Hash join & merge join to be implemented.
   return {nlj1, nlj2};
 }
@@ -125,9 +125,11 @@ std::vector<executor *> plan_join(parseNode *parse_node, bufferPoolManager *buff
 std::vector<executor *> plan_scan(parseNode *parse_node, bufferPoolManager *buffer_pool_manager) {
   std::vector<executor *> out;
   auto seqSE = new seqScanExecutor;
-  seqSE->Init(table_schema.TableID2Table[std::get<0>(parse_node->expression_->data_srcs[0])],
-			  buffer_pool_manager,
-			  nullptr);
+  seqSE->SetTable(table_schema.TableID2Table[std::get<0>(parse_node->expression_->data_srcs[0])]);
+  seqSE->SetBufferPoolManager(buffer_pool_manager);
+//  seqSE->Init(table_schema.TableID2Table[std::get<0>(parse_node->expression_->data_srcs[0])],
+//			  buffer_pool_manager,
+//			  nullptr);
   out.push_back((executor *)seqSE);
 //  auto idxSE = new indexScanExecutor;
 //  out.push_back((executor *)idxSE);
@@ -175,7 +177,11 @@ std::vector<executor *> plan_node(parseNode *parse_node, bufferPoolManager *buff
 	  // for every child plan, add all selection clauses on its view.
 	  for (auto it : child_plans) {
 		auto tmp = new selectExecutor;
-		tmp->Init(target_list, {it});
+		tmp->addChild(it);
+		for (auto target : target_list) {
+		  tmp->addTarget(target);
+		}
+//		tmp->Init(target_list, {it});
 		out.push_back((executor *)tmp);
 	  }
 	  break;
@@ -207,11 +213,17 @@ void planner::plan(queryTree *query_tree) {
   }
 }
 void planner::execute() {
+  char stopper[8];
+  std::memset(stopper, 0, 8);
   while (true) {
 	char indicator[8];
 	this->cheapest_tree_->root->Next(indicator);
-	if (std::strcmp(indicator, "00000000") != 0) {
+	if (std::memcmp(indicator, stopper, 8) == 0) {
 	  break;
 	}
   }
+  this->cheapest_tree_->root->End();
+}
+void planner::Init() {
+  this->cheapest_tree_->root->Init();
 }
