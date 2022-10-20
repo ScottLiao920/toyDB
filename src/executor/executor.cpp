@@ -102,7 +102,7 @@ void seqScanExecutor::Init(rel *tab, bufferPoolManager *manager, comparison_expr
   this->bpmgr_ = manager;
   this->view_->SetName("Seq Scan View for Tab " + tab->GetName());
   this->view_->cols_ = tab->cols_; // Scan executors are leaf executors so no need to set column sources again.
-  this->qual_ = qual;
+  this->quals_.emplace_back(qual);
   this->cnt_ = 0;
   this->pages_ = this->table_->get_location();
   if (manager->findPage(this->pages_[0]) == nullptr) {
@@ -115,9 +115,7 @@ void seqScanExecutor::Next(void *dst) {
   while (true) {
 	size_t len = this->table_->get_tuple_size();
 	std::vector<size_t> sizes = this->table_->GetColSizes();
-//  size_t col_idx = std::get<1>(this->qual_->data_srcs[0]);
-	size_t offset = this->table_->GetOffset(std::get<3>(this->qual_->data_srcs[0]));
-	char *rhs = (char *)std::get<3>(this->qual_->data_srcs[1]).c_str();
+//  size_t col_idx = std::get<1>(this->quals_->data_srcs[0]);
 	if (this->mode_ == volcano) {
 	  // emit one at a time
 	  char *buf = talloc(len);
@@ -145,9 +143,17 @@ void seqScanExecutor::Next(void *dst) {
 	  toyDBTUPLE tmp((char *)buf, len, sizes, type_ids);
 	  tmp.ancestor_ = this->table_->GetID();
 	  tmp.table_ = this->view_->GetID();
-	  // Verify comparison expression
-	  if (this->qual_ == nullptr || this->qual_->type == COL
-		  || this->qual_->compareFunc((char *)buf + offset, (char *)rhs)) {
+	  // Verify predicates
+	  bool matched = true;
+	  for (auto qual : this->quals_) {
+		size_t offset = this->table_->GetOffset(std::get<3>(qual->data_srcs[0]));
+		char *rhs = (char *)std::get<3>(qual->data_srcs[1]).c_str();
+		if (qual->type != COL && !qual->compareFunc((char *)buf + offset, (char *)rhs)) {
+		  matched = false;
+		  break;
+		}
+	  }
+	  if (matched) {
 		((std::vector<toyDBTUPLE> *)dst)->at(0) = tmp;
 		++this->cnt_;
 		break;
@@ -275,7 +281,7 @@ void selectExecutor::Next(void *dst) {
   for (auto it : children_) {
 	auto *buf = new std::vector<toyDBTUPLE>(BATCH_SIZE);
 	it->Next(buf);
-	if (buf->empty()) {
+	if (buf->empty() || buf->at(0).content_ == nullptr) {
 	  std::memset(dst, 0, 8);
 	  return;
 	}

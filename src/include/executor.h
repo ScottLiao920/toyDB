@@ -42,14 +42,14 @@ class scanExecutor : public executor {
   // abstract class for scan executors
  protected:
   rel *table_;
-  comparison_expr *qual_; // Should consider multiple predicate on a single executor
+  std::vector<comparison_expr *> quals_; // Should consider multiple predicate on a single executor
  public:
   void Init() override = 0;
   void SetMode(execution_mode);
   void SetTable(rel *);
   std::string GetTableName() { return this->table_->GetName(); }
   size_t GetTableID() { return this->table_->GetID(); }
-  void SetQual(comparison_expr *qual) { this->qual_ = qual; }
+  void AddQual(comparison_expr *qual) { this->quals_.emplace_back(qual); }
   void Next(void *dst) override = 0;
   void End() override = 0;
 };
