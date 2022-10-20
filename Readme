@@ -12,5 +12,7 @@
 
 ## TODO List:
 * Cost Estimation
+* Aggregation executors
+* Table modification executors
 * Write executor's memory context to disk when it's full
 * Version Control
