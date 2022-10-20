@@ -1,0 +1,16 @@
+## Unsupported sql syntax:
+* Table creation & modification (now can only hard code it)
+* Queries involving implicit cross-joins (select * from A, B)
+
+## Supported syntax:
+* selection & joins with predicates on pre-defined tables in main.cpp
+
+## Implemented executors:
+* sequential scan executor (multiple predicates)
+* nested loop join executor
+* select executor (to print query result)
+
+## TODO List:
+* Cost Estimation
+* Write executor's memory context to disk when it's full
+* Version Control

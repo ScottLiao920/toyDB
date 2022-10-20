@@ -1,3 +1,7 @@
+// Copyright (c) 2022.
+// Code written by Liao Chang (cliaosoc@nus.edu.sg)
+// Veni, vidi, vici
+
 //
 // Created by liaoc on 9/20/22.
 //
@@ -12,25 +16,22 @@
 #include <iostream>
 #include <fstream>
 #include <unistd.h>
+#include <typeindex>
 #include <vector>
-
-#define FILEPATH "/mnt/c/users/scorp/ClionProjects/toyDB/data/"
-#define INVALID_PHYSICAL_PAGE_ID 0
-#define PHYSICAL_PAGE_SIZE 8192
-#define HEAP_SIZE 8192
-#define BUFFER_POOL_SIZE 1
-#define EXEC_MEM 8192
-#define BATCH_SIZE 64
+#include <numeric>
+//#include <boost/algorithm/string.hpp>
+#include "config.h"
 
 typedef unsigned int HEAP_PAGE_ID;
 typedef unsigned int PhysicalPageID;
+#define INVALID_PHYSICAL_PAGE_ID 0xFFFFFFFF
+#define INMEMORY_PAGE_ID 0xFFFFFFFE
 typedef unsigned int RelID;
 typedef unsigned int RowID;
 typedef unsigned int ColID;
-
-enum storageMethod {
-  row_store, col_store
-};
+static RelID INVALID_RELID = 0xFFFFFFFF;
+static ColID INVALID_COLID = 0xFFFFFFFF;
+static RowID INVALID_ROWID = 0xFFFFFFFF;
 
 enum command_type {
   SELECT,
@@ -38,6 +39,10 @@ enum command_type {
   UPDATE,
   DELETE,
   INVALID_COMMAND
+};
+
+enum ParseNodeType {
+  SelectNode, JoinNode, ScanNode, AggrNode, UpdateNode, CompNode, EmptyNode
 };
 
 enum comparision {
@@ -57,10 +62,6 @@ enum aggr {
 
 enum expr_type {
   AGGR, COMP, COL
-};
-
-enum execution_mode {
-  volcano, vector
 };
 
 #endif //TOYDB_COMMON_H
