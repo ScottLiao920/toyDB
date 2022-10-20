@@ -73,7 +73,7 @@ std::vector<executor *> plan_join(parseNode *parse_node, bufferPoolManager *buff
 	  break;
 	}
 	case CompNode: {
-	  // Join node follow by comparison nodes
+	  // Join node follow by comparison nodes. It's parser's job to ensure no other types of nodes following it.
 	  auto left_scan_node = generate_scan_node(parse_node->expression_->data_srcs[0]);
 	  auto right_scan_node = generate_scan_node(parse_node->expression_->data_srcs[1]);
 	  auto left_scan_plans = plan_scan(&left_scan_node, buffer_pool_manager);
@@ -84,11 +84,11 @@ std::vector<executor *> plan_join(parseNode *parse_node, bufferPoolManager *buff
 	  while (cur_node->type_ != EmptyNode) {
 		if (parse_node->expression_->data_srcs[0] == cur_node->expression_->data_srcs[0]) {
 		  for (auto it : left_scan_plans) {
-			((scanExecutor *)it)->SetQual((comparison_expr *)cur_node->expression_);
+			((scanExecutor *)it)->AddQual((comparison_expr *)cur_node->expression_);
 		  }
 		} else {
 		  for (auto it : right_scan_plans) {
-			((scanExecutor *)it)->SetQual((comparison_expr *)cur_node->expression_);
+			((scanExecutor *)it)->AddQual((comparison_expr *)cur_node->expression_);
 		  }
 		}
 		cur_node = cur_node->child_;
@@ -143,7 +143,7 @@ std::vector<executor *> plan_scan(parseNode *parse_node, bufferPoolManager *buff
 //  out.push_back((executor *)bmiSE);
   for (auto it : out) {
 	if (((scanExecutor *)it)->GetTableID() == std::get<0>(parse_node->expression_->data_srcs[0])) {
-	  ((scanExecutor *)it)->SetQual((comparison_expr *)parse_node->expression_);
+	  ((scanExecutor *)it)->AddQual((comparison_expr *)parse_node->expression_);
 	}
   }
   return out;
