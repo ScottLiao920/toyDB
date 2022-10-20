@@ -101,7 +101,7 @@ void seqScanExecutor::Init(rel *tab, bufferPoolManager *manager, comparison_expr
   this->table_ = tab;
   this->bpmgr_ = manager;
   this->view_->SetName("Seq Scan View for Tab " + tab->GetName());
-  this->view_->cols_ = tab->cols_;
+  this->view_->cols_ = tab->cols_; // Scan executors are leaf executors so no need to set column sources again.
   this->qual_ = qual;
   this->cnt_ = 0;
   this->pages_ = this->table_->get_location();
@@ -131,6 +131,7 @@ void seqScanExecutor::Next(void *dst) {
 		// write an empty tuple to dst
 		toyDBTUPLE tmp;
 		tmp.table_ = this->view_->GetID();
+		tmp.ancestor_ = this->table_->GetID();
 		((std::vector<toyDBTUPLE> *)dst)->at(0) = tmp;
 		tfree(buf);
 		return;
@@ -143,6 +144,7 @@ void seqScanExecutor::Next(void *dst) {
 	std::memcpy(buf, data_ptr, len);
 	auto type_ids = this->table_->GetTypeIDs();
 	toyDBTUPLE tmp((char *)buf, len, sizes, type_ids);
+	tmp.ancestor_ = this->table_->GetID();
 	tmp.table_ = this->view_->GetID();
 	// Verify comparison expression
 	if (this->qual_ == nullptr || this->qual_->type == COL
@@ -243,6 +245,9 @@ void selectExecutor::Init(std::vector<expr *> exprs, std::vector<executor *> chi
   }
   this->targetList_ = exprs;
   this->children_ = std::move(children);
+//  for (auto &it : this->view_->cols_) {
+//	it.SetTable(this->children_[0]->GetViewID());
+//  }
 }
 void selectExecutor::Next(void *dst) {
   if (this->cnt_ == 0) {
@@ -263,16 +268,29 @@ void selectExecutor::Next(void *dst) {
 	std::memset(dst, 1, sizeof(char));
 	if (this->mode_ == volcano) {
 	  size_t offset = 0, cnt = 0;
-	  for (auto col_size : buf->cbegin()->sizes_) {
+	  for (auto col_size : this->view_->GetColSizes()) {
 		// TODO: validate targetList on tmp_buf here
 		if (col_size == 0) {
 		  // skip the first empty entry
 		  continue;
 		}
 		char tmp_buf[col_size];
-		std::memcpy(tmp_buf, buf->cbegin()->content_ + offset, col_size);
+		std::vector<column> cand_cols = table_schema.TableID2Table[this->children_[0]->GetViewID()]->cols_;
+		column &target_col = this->view_->cols_[cnt];
+		size_t buf_offset = 0;
+		for (auto cand_col : cand_cols) {
+		  std::string cand_name = cand_col.getName();
+		  if (cand_col.GetRelID() == target_col.GetRelID()
+			  && cand_name.find(target_col.getName()) != std::string::npos) {
+			std::memcpy(tmp_buf, buf->cbegin()->content_ + buf_offset, target_col.getSize());
+			break;
+		  }
+		  buf_offset += cand_col.getSize();
+		}
+
+//		std::memcpy(tmp_buf, buf->cbegin()->content_ + offset, col_size);
 		std::cout << "|" << std::setw(this->targetList_[cnt]->alias.size());
-		switch (type_schema.typeID2type[buf->at(0).type_ids_[cnt]]) {
+		switch (type_schema.typeID2type[target_col.typeid_]) {
 		  case (1): {
 			std::cout << (int)*tmp_buf;
 			break;
@@ -314,6 +332,7 @@ void nestedLoopJoinExecutor::Init() {
   this->view_->cols_ = table_schema.TableName2Table[this->left_child_->GetViewName()]->cols_;
   for (auto &it : this->view_->cols_) {
 	it.SetName(this->left_child_->GetViewName() + '.' + it.getName());
+//	it.SetTable(this->left_child_->GetViewID());
   }
   std::vector<std::string> tmp;
   std::string
@@ -321,13 +340,14 @@ void nestedLoopJoinExecutor::Init() {
   std::string
 	  right_col = std::get<3>(this->pred_->data_srcs[1]).substr(std::get<3>(this->pred_->data_srcs[0]).find(".") + 1);
   for (auto it : table_schema.TableName2Table[this->right_child_->GetViewName()]->cols_) {
-	std::string upp_name = it.getName();
-	std::transform(upp_name.begin(), upp_name.end(), upp_name.begin(), ::toupper);
-	if (upp_name != left_col && upp_name != right_col) {
+//	std::string upp_name = it.getName();
+//	std::transform(upp_name.begin(), upp_name.end(), upp_name.begin(), ::toupper);
+//	if (upp_name != left_col && upp_name != right_col) {
 //	  std::string tmp_name = this->right_child_->GetViewName() + '.' + it.getName();
-	  this->view_->cols_.push_back(it);
-	  this->view_->cols_.back().SetName(this->right_child_->GetViewName() + '.' + it.getName());
-	}
+	this->view_->cols_.push_back(it);
+	this->view_->cols_.back().SetName(this->right_child_->GetViewName() + '.' + it.getName());
+//	  it.SetTable(this->right_child_->GetViewID());
+//	}
   }
   this->curLeftBatch_ = std::vector<toyDBTUPLE>(BATCH_SIZE);
   this->curRightBatch_ = std::vector<toyDBTUPLE>(BATCH_SIZE);
@@ -353,12 +373,13 @@ void nestedLoopJoinExecutor::Next(void *dst) {
 	rel *r_tab = table_schema.TableID2Table[this->curLeftTuple_->table_];
 	std::vector<size_t> r_sizes = r_tab->GetColSizes();
 	size_t r_col_offset = r_tab->GetOffset(col_name);
-//		  std::cout << "Comparing " << (int)*(left.content_ + l_col_offset) << " from left side with "
-//					<< (int)*(right.content_ + r_col_offset) << " from right side" << std::endl;
+//	std::cout << "Comparing " << (int)*(left.content_ + l_col_offset) << " from left side with "
+//			  << (int)*(right.content_ + r_col_offset) << " from right side" << std::endl;
 	if (this->pred_ == nullptr || this->pred_->compareFunc(this->curLeftTuple_->content_ + l_col_offset,
 														   this->curRightTuple_->content_ + r_col_offset)) {
 	  // pass predicate, join this two tuple tgt
-	  toyDBTUPLE *tup = this->Join(this->curLeftTuple_.base(), this->curRightTuple_.base(), col_name);
+	  toyDBTUPLE *tup = this->Join(this->curLeftTuple_.base(), this->curRightTuple_.base());
+	  tup->ancestor_ = this->curLeftTuple_->ancestor_;
 	  tup->table_ = this->view_->GetID();
 	  ((std::vector<toyDBTUPLE> *)dst)->at(cnt) = *tup;
 	  ++cnt;
@@ -397,29 +418,38 @@ void nestedLoopJoinExecutor::End() {
   this->left_child_->End();
   this->right_child_->End();
 }
-toyDBTUPLE *joinExecutor::Join(toyDBTUPLE *left, toyDBTUPLE *right, const std::string &col_name) {
+toyDBTUPLE *joinExecutor::Join(toyDBTUPLE *left, toyDBTUPLE *right) {
   std::vector<size_t> l_sizes = left->sizes_;
-  std::vector<size_t> l_types = left->type_ids_;
-  rel *r_tab = table_schema.TableID2Table[right->table_];
-  size_t r_idx = r_tab->GetColIdx(col_name);
+  std::vector<size_t> f_types, f_sizes;
   std::vector<size_t> r_sizes = right->sizes_;
-  size_t ttl_size = left->size_ + right->size_ - right->sizes_[r_idx];
+  size_t ttl_size = left->size_ + right->size_;
   char *buf = talloc(ttl_size);
-  std::memcpy(buf, left->content_, left->size_);
-  size_t offset_f = 0, offset_r = 0;
-  for (size_t cnt = 0; cnt < right->sizes_.size(); ++cnt) {
-	if (this->pred_->comparision_type != equal or cnt != r_idx) {
-	  std::memcpy(buf + left->size_ + offset_f, right->content_ + offset_r, r_sizes[cnt]);
-	  offset_f += r_sizes[cnt];
-	  l_sizes.push_back(r_sizes[cnt]);
-	  l_types.push_back(right->type_ids_[cnt]);
+  // Write to result tuple in the same order as the column order in view.
+
+//  std::memcpy(buf, left->content_, left->size_);
+  size_t offset_f = 0, offset_r = 0, offset_l = 0;
+  size_t l_cnt = 0, r_cnt = 0;
+  for (auto it : this->view_->cols_) {
+	if (it.GetRelID() == left->ancestor_) { //it: original rel id; left->table: view id of scan executor
+	  std::memcpy(buf + offset_f, left->content_ + offset_l, l_sizes[l_cnt]);
+	  f_types.push_back(left->type_ids_[l_cnt]);
+	  f_sizes.push_back(l_sizes[l_cnt]);
+	  offset_f += l_sizes[l_cnt];
+	  offset_l += l_sizes[l_cnt];
+	  ++l_cnt;
+	} else {
+	  std::memcpy(buf + offset_f, right->content_ + offset_r, r_sizes[r_cnt]);
+	  f_types.push_back(right->type_ids_[r_cnt]);
+	  f_sizes.push_back(r_sizes[r_cnt]);
+	  offset_f += r_sizes[r_cnt];
+	  offset_r += r_sizes[r_cnt];
+	  ++r_cnt;
 	}
-	offset_r += r_sizes[cnt];
   }
   auto *out = (toyDBTUPLE *)talloc(sizeof(toyDBTUPLE));
   out->content_ = buf;
-  out->sizes_ = l_sizes;
+  out->sizes_ = f_sizes;
   out->size_ = ttl_size;
-  out->type_ids_ = l_types;
+  out->type_ids_ = f_types;
   return out;
 }

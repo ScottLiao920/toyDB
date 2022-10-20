@@ -276,6 +276,7 @@ toyDBTUPLE &toyDBTUPLE::operator=(const toyDBTUPLE &ref) {
 	for (auto it : ref.type_ids_) {
 	  this->type_ids_.push_back(it);
 	}
+	this->ancestor_ = ref.ancestor_;
 //	this->sizes_ = std::vector<size_t>(ref.sizes_);
   }
   return *this;

@@ -58,6 +58,7 @@ class toyDBTUPLE {
   char *content_; // Actual content
   size_t size_; // total length
   RelID table_; // table source
+  RelID ancestor_; // The root of toyDBTuple
   RowID row_; // row number in the source table
   std::vector<size_t> sizes_; // sizes of individual columns, the sum of this vector should equal to size_
   std::vector<size_t> type_ids_; // typeid of col types
@@ -85,7 +86,9 @@ class column {
   size_t getSize() { return this->width_; }
   std::string getName() { return this->name_; }
   column(std::string, size_t, RelID, const std::type_info &);
+  void SetTable(RelID id) { this->rel_ = id; }
   std::vector<PhysicalPageID> pages_;
+  RelID GetRelID() { return this->rel_; };
   size_t typeid_;
 };
 

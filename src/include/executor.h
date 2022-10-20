@@ -35,6 +35,7 @@ class executor {
   void tfree(char *);
   void SetBufferPoolManager(bufferPoolManager *);
   std::string GetViewName() { return this->view_->GetName(); };
+  RelID GetViewID() { return this->view_->GetID(); };
 };
 
 class scanExecutor : public executor {
@@ -93,7 +94,7 @@ class joinExecutor : public executor {
   void Init() override = 0;
   void Next(void *dst) override = 0;
   void End() override = 0;
-  toyDBTUPLE *Join(toyDBTUPLE *, toyDBTUPLE *, const std::string &);
+  toyDBTUPLE *Join(toyDBTUPLE *, toyDBTUPLE *);
 };
 
 class nestedLoopJoinExecutor : public joinExecutor {
