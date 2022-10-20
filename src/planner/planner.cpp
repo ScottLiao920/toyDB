@@ -73,19 +73,25 @@ std::vector<executor *> plan_join(parseNode *parse_node, bufferPoolManager *buff
 	  break;
 	}
 	case CompNode: {
-	  // Join node follow by a comparison node
+	  // Join node follow by comparison nodes
 	  auto left_scan_node = generate_scan_node(parse_node->expression_->data_srcs[0]);
 	  auto right_scan_node = generate_scan_node(parse_node->expression_->data_srcs[1]);
 	  auto left_scan_plans = plan_scan(&left_scan_node, buffer_pool_manager);
 	  auto right_scan_plans = plan_scan(&right_scan_node, buffer_pool_manager);
-	  if (parse_node->expression_->data_srcs[0] == parse_node->child_->expression_->data_srcs[0]) {
-		for (auto it : left_scan_plans) {
-		  ((scanExecutor *)it)->SetQual((comparison_expr *)parse_node->child_->expression_);
+
+	  // Plan tailing comparison nodes
+	  parseNode *cur_node = parse_node->child_;
+	  while (cur_node->type_ != EmptyNode) {
+		if (parse_node->expression_->data_srcs[0] == cur_node->expression_->data_srcs[0]) {
+		  for (auto it : left_scan_plans) {
+			((scanExecutor *)it)->SetQual((comparison_expr *)cur_node->expression_);
+		  }
+		} else {
+		  for (auto it : right_scan_plans) {
+			((scanExecutor *)it)->SetQual((comparison_expr *)cur_node->expression_);
+		  }
 		}
-	  } else {
-		for (auto it : right_scan_plans) {
-		  ((scanExecutor *)it)->SetQual((comparison_expr *)parse_node->child_->expression_);
-		}
+		cur_node = cur_node->child_;
 	  }
 	  for (auto it : left_scan_plans) {
 		for (auto it2 : right_scan_plans) {

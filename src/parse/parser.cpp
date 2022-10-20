@@ -50,7 +50,7 @@ std::tuple<size_t, size_t, size_t, std::string> parser::processDataSrc(const std
   std::regex_search(raw_data_src, tmp, dot);
   if (tmp.empty()) {
 	if (is_all_digits(raw_data_src)) {
-	  return {INVALID_RELID, INVALID_COLID, typeid(int).hash_code(), raw_data_src};
+	  return {INVALID_RELID, INVALID_COLID, typeid(std::string).hash_code(), raw_data_src};
 	} else {
 	  // TODO: search for matching column in all tables.
 	}
@@ -176,7 +176,7 @@ void parser::parse(const std::string &sql_string) {
 	  // check qualifications in WHERE clause
 	  expr *cur_qual = new expr;
 	  std::smatch op;
-	  std::regex op_regex("[=<>!]");
+	  std::regex op_regex("[=<>!]+");
 	  std::regex_search(it, op, op_regex);
 	  if (not op.empty()) {
 		cur_qual->type = COMP;
@@ -303,6 +303,11 @@ bool comparison_expr::compareFunc(char *lhs_ptr, char *rhs_ptr) {
 	case (0x400000004): {
 	  int lhs = (int)*lhs_ptr;
 	  int rhs = std::strtoll(rhs_ptr, nullptr, 0);
+	  return this->compare(lhs, rhs);
+	}
+	case (0x100000004): {
+	  int lhs = (int)*lhs_ptr;
+	  int rhs = std::strtoul(rhs_ptr, nullptr, 0);
 	  return this->compare(lhs, rhs);
 	}
 	case (0x200000004): {

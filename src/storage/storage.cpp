@@ -186,7 +186,7 @@ size_t rel::GetOffset(const std::string &col_name) {
   for (auto it : this->cols_) {
 	std::string upper_name = it.getName();
 	std::transform(upper_name.begin(), upper_name.end(), upper_name.begin(), ::toupper);
-	if (col_name == upper_name) {
+	if (col_name.find(upper_name) != std::string::npos) {
 	  break;
 	}
 	col_offset += sizes[cnt];

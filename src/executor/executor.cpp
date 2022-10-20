@@ -111,68 +111,69 @@ void seqScanExecutor::Init(rel *tab, bufferPoolManager *manager, comparison_expr
   this->mem_ptr_ = manager->findPage(this->pages_[0])->content;
 }
 void seqScanExecutor::Next(void *dst) {
-  size_t len = this->table_->get_tuple_size();
-  std::vector<size_t> sizes = this->table_->GetColSizes();
+  //Iterate until a tuple matched predicate or all tuples emitted.
+  while (true) {
+	size_t len = this->table_->get_tuple_size();
+	std::vector<size_t> sizes = this->table_->GetColSizes();
 //  size_t col_idx = std::get<1>(this->qual_->data_srcs[0]);
-  size_t offset = this->table_->GetOffset(std::get<3>(this->qual_->data_srcs[0]));
-  char *rhs = (char *)std::get<3>(this->qual_->data_srcs[1]).c_str();
-  if (this->mode_ == volcano) {
-	// emit one at a time
-	char *buf = talloc(len);
-	std::memset(buf, 0, len);
-	char *data_ptr = talloc(sizeof(char *));
-	this->mem_ptr_ += sizeof(char *);
-	if (std::memcmp(this->mem_ptr_, buf, sizeof(int))
-		== 0) { // Little trick: currently buf is an empty char array with min. 4 bytes.
-	  //last toyDBTUPLE
-	  std::memcpy(&data_ptr, this->mem_ptr_ - sizeof(char *), sizeof(char *));
-	  if (data_ptr == nullptr) {
-		// One past the last toyDBTuple
-		// write an empty tuple to dst
-		toyDBTUPLE tmp;
-		tmp.table_ = this->view_->GetID();
-		tmp.ancestor_ = this->table_->GetID();
-		((std::vector<toyDBTUPLE> *)dst)->at(0) = tmp;
-		tfree(buf);
-		return;
-	  } else {
-		data_ptr -= len;
-	  }
-	} else {
-	  std::memcpy(&data_ptr, this->mem_ptr_, sizeof(char *));
-	}
-	std::memcpy(buf, data_ptr, len);
-	auto type_ids = this->table_->GetTypeIDs();
-	toyDBTUPLE tmp((char *)buf, len, sizes, type_ids);
-	tmp.ancestor_ = this->table_->GetID();
-	tmp.table_ = this->view_->GetID();
-	// Verify comparison expression
-	if (this->qual_ == nullptr || this->qual_->type == COL
-		|| this->qual_->compareFunc((char *)buf + offset, (char *)rhs)) {
-	  ((std::vector<toyDBTUPLE> *)dst)->at(0) = tmp;
-	  ++this->cnt_;
-	}
-	//	((std::vector<toyDBTUPLE> *)dst)->at(0) = *tmp;
-	//	((std::vector<toyDBTUPLE> *)dst)->emplace(((std::vector<toyDBTUPLE> *)dst)->begin(), (char *)buf, len, sizes);
-	tfree(buf);
-	//	tfree(data_ptr);
-	//	((std::vector<toyDBTUPLE> *)dst)->emplace_back((char *)buf, len, sizes);
-  } else {
-	// emit a batch at a time TODO: predicate validation
-	for (auto i = 0; i < BATCH_SIZE; i++) {
-	  char *buf = talloc(len * BATCH_SIZE);
+	size_t offset = this->table_->GetOffset(std::get<3>(this->qual_->data_srcs[0]));
+	char *rhs = (char *)std::get<3>(this->qual_->data_srcs[1]).c_str();
+	if (this->mode_ == volcano) {
+	  // emit one at a time
+	  char *buf = talloc(len);
+	  std::memset(buf, 0, len);
 	  char *data_ptr = talloc(sizeof(char *));
 	  this->mem_ptr_ += sizeof(char *);
-	  std::memcpy(&data_ptr, this->mem_ptr_, sizeof(char *));
-	  if (data_ptr == nullptr) {
+	  if (std::memcmp(this->mem_ptr_, buf, sizeof(int))
+		  == 0) { // Little trick: currently buf is an empty char array with min. 4 bytes.
 		//last toyDBTUPLE
 		std::memcpy(&data_ptr, this->mem_ptr_ - sizeof(char *), sizeof(char *));
-		data_ptr -= len;
+		if (data_ptr == nullptr) {
+		  // One past the last toyDBTuple
+		  // clear dst vector
+		  ((std::vector<toyDBTUPLE> *)dst)->clear();
+		  tfree(buf);
+		  return;
+		} else {
+		  data_ptr -= len;
+		}
+	  } else {
+		std::memcpy(&data_ptr, this->mem_ptr_, sizeof(char *));
 	  }
 	  std::memcpy(buf, data_ptr, len);
-	  ((std::vector<toyDBTUPLE> *)dst)->emplace_back((char *)buf, len, sizes, this->table_->GetTypeIDs());
-	  tfree(buf, len * BATCH_SIZE);
-	  tfree(data_ptr, sizeof(char *));
+	  auto type_ids = this->table_->GetTypeIDs();
+	  toyDBTUPLE tmp((char *)buf, len, sizes, type_ids);
+	  tmp.ancestor_ = this->table_->GetID();
+	  tmp.table_ = this->view_->GetID();
+	  // Verify comparison expression
+	  if (this->qual_ == nullptr || this->qual_->type == COL
+		  || this->qual_->compareFunc((char *)buf + offset, (char *)rhs)) {
+		((std::vector<toyDBTUPLE> *)dst)->at(0) = tmp;
+		++this->cnt_;
+		break;
+	  }
+	  //	((std::vector<toyDBTUPLE> *)dst)->at(0) = *tmp;
+	  //	((std::vector<toyDBTUPLE> *)dst)->emplace(((std::vector<toyDBTUPLE> *)dst)->begin(), (char *)buf, len, sizes);
+	  tfree(buf);
+	  //	tfree(data_ptr);
+	  //	((std::vector<toyDBTUPLE> *)dst)->emplace_back((char *)buf, len, sizes);
+	} else {
+	  // emit a batch at a time TODO: predicate validation
+	  for (auto i = 0; i < BATCH_SIZE; i++) {
+		char *buf = talloc(len * BATCH_SIZE);
+		char *data_ptr = talloc(sizeof(char *));
+		this->mem_ptr_ += sizeof(char *);
+		std::memcpy(&data_ptr, this->mem_ptr_, sizeof(char *));
+		if (data_ptr == nullptr) {
+		  //last toyDBTUPLE
+		  std::memcpy(&data_ptr, this->mem_ptr_ - sizeof(char *), sizeof(char *));
+		  data_ptr -= len;
+		}
+		std::memcpy(buf, data_ptr, len);
+		((std::vector<toyDBTUPLE> *)dst)->emplace_back((char *)buf, len, sizes, this->table_->GetTypeIDs());
+		tfree(buf, len * BATCH_SIZE);
+		tfree(data_ptr, sizeof(char *));
+	  }
 	}
   }
 }
@@ -418,7 +419,7 @@ void nestedLoopJoinExecutor::Next(void *dst) {
 	if (this->curRightTuple_ == curRightBatch_.end()) {
 	  // Current batch of right tuples all validated, retrieve the next batch
 	  this->right_child_->Next(&this->curRightBatch_);
-	  if (this->curRightBatch_.begin()->content_ == nullptr) {
+	  if (this->curRightBatch_.empty() || this->curRightBatch_.begin()->content_ == nullptr) {
 		// iterate thru all right tuples already, get to the next left tuple
 		((seqScanExecutor *)
 			this->right_child_)->Reset(); // TODO: this should be compatible any other executors.
@@ -426,12 +427,13 @@ void nestedLoopJoinExecutor::Next(void *dst) {
 		if (this->curLeftTuple_ == this->curLeftBatch_.end()) {
 		  // Reached end of current block, retrieve the next block
 		  this->left_child_->Next(&this->curLeftBatch_);
-		  if (this->curLeftBatch_.begin()->content_ == nullptr) {
+		  if (this->curLeftBatch_.empty() || this->curLeftBatch_.begin()->content_ == nullptr) {
 			// iterate thru all left & right tuples, just return
 			return;
 		  }
 		  this->curLeftTuple_ = this->curLeftBatch_.begin();
 		}
+		this->curRightBatch_.resize(BATCH_SIZE); // Need to reserve/resize since it might be cleared
 		this->right_child_->Next(&this->curRightBatch_);
 	  }
 	  this->curRightTuple_ = this->curRightBatch_.begin();
