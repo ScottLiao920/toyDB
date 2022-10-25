@@ -272,19 +272,19 @@ bool comparison_expr::compare(const char *lhs_ptr, const char *rhs_ptr, size_t t
 //			<< (int)*rhs_ptr << " from right side" << std::endl;
   switch (type_schema.typeID2type[type_id]) {
 	case (1): {
-	  int lhs = (int)*lhs_ptr;
+	  auto lhs = (int *)lhs_ptr;
 	  int rhs = std::strtoll(rhs_ptr, nullptr, 0);
-	  return this->compare(lhs, rhs);
+	  return this->compare(*lhs, rhs);
 	}
 	case (2): {
-	  auto lhs = (float)*lhs_ptr;
+	  auto lhs = (float *)lhs_ptr;
 	  auto rhs = (float)std::strtof(rhs_ptr, nullptr);
-	  return this->compare(lhs, rhs);
+	  return this->compare(*lhs, rhs);
 	}
 	case (3): {
-	  size_t lhs = (size_t)*lhs_ptr;
+	  auto lhs = (size_t *)lhs_ptr;
 	  size_t rhs = std::strtoul(rhs_ptr, nullptr, 0);
-	  return this->compare(lhs, rhs);
+	  return this->compare(*lhs, rhs);
 	}
 	case (4): {
 	  std::string lhs(lhs_ptr);
@@ -304,39 +304,39 @@ bool comparison_expr::compareFunc(char *lhs_ptr, char *rhs_ptr) {
   unsigned long long specifier = makepair(std::get<2>(this->data_srcs[0]), std::get<2>(this->data_srcs[1]));
   switch (specifier) {
 	case (0x100000001): {
-	  int lhs = (int)*lhs_ptr;
-	  int rhs = (int)*rhs_ptr;
-	  return this->compare(lhs, rhs);
+	  auto lhs = (int *)lhs_ptr;
+	  auto rhs = (int *)rhs_ptr;
+	  return this->compare(*lhs, *rhs);
 	}
 	case (0x200000002): {
-	  int lhs = (float)*lhs_ptr;
-	  int rhs = (float)*rhs_ptr;
-	  return this->compare(lhs, rhs);
+	  auto lhs = (float *)lhs_ptr;
+	  auto rhs = (float *)rhs_ptr;
+	  return this->compare(*lhs, *rhs);
 	}
 	case (0x300000003): {
-	  int lhs = (size_t)*lhs_ptr;
-	  int rhs = (size_t)*rhs_ptr;
-	  return this->compare(lhs, rhs);
+	  auto lhs = (size_t *)lhs_ptr;
+	  auto rhs = (size_t *)rhs_ptr;
+	  return this->compare(*lhs, *rhs);
 	}
 	case (0x400000004): {
-	  int lhs = (int)*lhs_ptr;
+	  auto lhs = (int *)lhs_ptr;
 	  int rhs = std::strtoll(rhs_ptr, nullptr, 0);
-	  return this->compare(lhs, rhs);
+	  return this->compare(*lhs, rhs);
 	}
 	case (0x100000004): {
-	  int lhs = (int)*lhs_ptr;
+	  auto lhs = (int *)lhs_ptr;
 	  int rhs = std::strtoul(rhs_ptr, nullptr, 0);
-	  return this->compare(lhs, rhs);
+	  return this->compare(*lhs, rhs);
 	}
 	case (0x200000004): {
-	  int lhs = (float)*lhs_ptr;
-	  int rhs = (float)std::strtof(rhs_ptr, nullptr);
-	  return this->compare(lhs, rhs);
+	  auto lhs = (float*)lhs_ptr;
+	  auto rhs = (float)std::strtof(rhs_ptr, nullptr);
+	  return this->compare(*lhs, rhs);
 	}
 	case (0x300000004): {
-	  int lhs = (size_t)*lhs_ptr;
-	  int rhs = std::strtoul(rhs_ptr, nullptr, 0);
-	  return this->compare(lhs, rhs);
+	  auto lhs = (size_t*)lhs_ptr;
+	  auto rhs = std::strtoul(rhs_ptr, nullptr, 0);
+	  return this->compare(*lhs, rhs);
 	}
 	default: {
 	  std::cout << "Comparison not supported for "
