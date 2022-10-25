@@ -24,7 +24,7 @@ void selectExecutor::Init(std::vector<expr *> exprs, std::vector<executor *> chi
   for (auto child : this->children_) {
 	child->Init();
   }
-  this->view_->SetName("Selection View" + children[0]->GetViewName());
+  this->view_->SetName("Selection View for {" + children[0]->GetViewName() + "}");
   for (auto it : exprs) {
 	this->view_->cols_.push_back(table_schema.TableID2Table[std::get<0>(it->data_srcs[0])]->cols_[std::get<1>(it->data_srcs[0])]);
   }
@@ -77,15 +77,15 @@ void selectExecutor::Next(void *dst) {
 		std::cout << "|" << std::setw(this->targetList_[cnt]->alias.size());
 		switch (type_schema.typeID2type[target_col.typeid_]) {
 		  case (1): {
-			std::cout << (int)*tmp_buf;
+			std::cout << *((int *)tmp_buf);
 			break;
 		  }
 		  case (2): {
-			std::cout << (float)*tmp_buf;
+			std::cout << *((float *)tmp_buf);
 			break;
 		  }
 		  case (3): {
-			std::cout << (size_t)*tmp_buf;
+			std::cout << *((size_t *)tmp_buf);
 			break;
 		  }
 		  case (4): {

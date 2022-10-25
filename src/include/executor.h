@@ -131,6 +131,7 @@ class aggregateExecutor : public executor {
   size_t col_offset;
   unsigned char result_[64];
   std::string column_name_;
+  bool finished_ = false;
  public:
   void Init() override;
   void SetChild(executor *inp) { this->child_ = inp; }
@@ -141,18 +142,20 @@ class aggregateExecutor : public executor {
 
 class SumAggregateExecutor : public aggregateExecutor {
  public:
+  void Init() override;
   void Next(void *) override;
 };
 
 class CountAggregateExecutor : public aggregateExecutor {
  public:
-//  void Init() override;
+  void Init() override;
   void Next(void *) override;
 //  void End() override;
 };
 
 class MeanAggregateExecutor : public aggregateExecutor {
  public:
+  void Init() override;
   void Next(void *) override;
 };
 
