@@ -89,7 +89,7 @@ int main() {
   }
 
   p.parse(
-	  "SELECT table1.relId_, table1.content, table2.content from table1, table2 where table1.relId_ = table2.relId_ and table2.relId_ >= 90 and table1.relId_<95");
+	  "SELECT table1.relId_, COUNT(table1.relId_) from table1, table2 where table1.relId_ = table2.relId_ and table2.relId_ >= 90 and table1.relId_<95");
   o.plan(&p.stmt_tree_);
   o.Init();
   o.execute();

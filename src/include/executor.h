@@ -124,12 +124,36 @@ class mergeJoinExecutor : joinExecutor {
   void End() override {};
 };
 
-class aggregateExecutor : executor {
- public:
+class aggregateExecutor : public executor {
+ protected:
   executor *child_ = nullptr;
-  void Init() override {};
-  void Next(void *) override {};
-  void End() override {};
+  size_t col_idx;
+  size_t col_offset;
+  unsigned char result_[64];
+  std::string column_name_;
+ public:
+  void Init() override;
+  void SetChild(executor *inp) { this->child_ = inp; }
+  void SetColumn(std::string);
+  void Next(void *) override = 0;
+  void End() override;
+};
+
+class SumAggregateExecutor : public aggregateExecutor {
+ public:
+  void Next(void *) override;
+};
+
+class CountAggregateExecutor : public aggregateExecutor {
+ public:
+//  void Init() override;
+  void Next(void *) override;
+//  void End() override;
+};
+
+class MeanAggregateExecutor : public aggregateExecutor {
+ public:
+  void Next(void *) override;
 };
 
 class createExecutor : executor {

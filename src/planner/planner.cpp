@@ -159,10 +159,37 @@ std::vector<executor *> plan_node(parseNode *parse_node, bufferPoolManager *buff
 	case AggrNode: {
 	  //TODO: this is merely a skeleton
 	  auto child_plans = plan_node(parse_node->child_, buffer_pool_manager);
+	  // Need to verify the data source to feed into SetColumn (should be raw column name)
 	  for (auto it : child_plans) {
-		auto tmp = new aggregateExecutor;
-		tmp->child_ = it;
-		out.push_back((executor *)tmp);
+		switch (((aggr_expr *)parse_node->expression_)->aggr_type) {
+		  case MIN:break;
+		  case MAX:break;
+		  case COUNT: {
+			auto tmp = new CountAggregateExecutor;
+			tmp->SetBufferPoolManager(buffer_pool_manager);
+			tmp->SetChild(it);
+			tmp->SetColumn(std::get<3>(parse_node->expression_->data_srcs[0]));
+			out.push_back(tmp);
+			break;
+		  }
+		  case AVG: {
+			auto tmp = new MeanAggregateExecutor;
+			tmp->SetBufferPoolManager(buffer_pool_manager);
+			tmp->SetChild(it);
+			tmp->SetColumn(std::get<3>(parse_node->expression_->data_srcs[0]));
+			out.push_back(tmp);
+			break;
+		  }
+		  case SUM: {
+			auto tmp = new SumAggregateExecutor;
+			tmp->SetBufferPoolManager(buffer_pool_manager);
+			tmp->SetChild(it);
+			tmp->SetColumn(std::get<3>(parse_node->expression_->data_srcs[0]));
+			out.push_back(tmp);
+			break;
+		  }
+		  case NO_AGGR:break;
+		}
 	  }
 	  break;
 	}

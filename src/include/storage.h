@@ -60,7 +60,7 @@ class toyDBTUPLE {
   RelID table_; // table source
   RelID ancestor_; // The root of toyDBTuple
   RowID row_; // row number in the source table
-  std::vector<size_t> sizes_; // sizes of individual columns, the sum of this vector should equal to size_
+  std::vector<size_t> sizes_; // sizes of individual columns, the result_ of this vector should equal to size_
   std::vector<size_t> type_ids_; // typeid of col types
   toyDBTUPLE() {
 	this->table_ = INVALID_RELID;
