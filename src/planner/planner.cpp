@@ -234,13 +234,13 @@ std::vector<executor *> plan_node(parseNode *parse_node, bufferPoolManager *buff
 
 void planner::plan(queryTree *query_tree) {
   /*
-   * This method generate root based on target list, then iteratively go thru all qualifications & generate plan on then recursively
+   * This method generate root based on target list, then iteratively go thru all qualifications & generate plan on them recursively
    */
   auto out = plan_node(query_tree->root_, this->bpmgr_);
   size_t cur_min = 0xFFFFFFFF;
   for (auto tmp : out) {
 	auto cur_plan = new planTree;
-	cur_plan->root = tmp; // TODO: this should contain a complete plan tree
+	cur_plan->root = tmp;
 	this->trees.emplace_back(cur_plan, 0xFFFFFFFF);
 	this->cheapest_tree_ = cur_plan;
   }

@@ -224,6 +224,24 @@ void parser::parse(const std::string &sql_string) {
 	}
   }
   cur_parse_node->type_ = EmptyNode;
+  /*
+	* If the root of query tree is an aggregation node, push its child selection nodes upwards (this only make
+	* sense if it's a group by sql statement) or make a new selection node as its parent.
+  */
+
+  if (this->stmt_tree_.root_->type_ == AggrNode && this->stmt_tree_.hasGroup) {
+	// push selection nodes upwards (NOT TESTED)
+	cur_parse_node = this->stmt_tree_.root_;
+	while (cur_parse_node->child_->type_ == AggrNode) {
+	  cur_parse_node = cur_parse_node->child_;
+	}
+  } else if (this->stmt_tree_.root_->type_ == AggrNode) {
+	auto tmp = new parseNode;
+	tmp->type_ = SelectNode;
+	tmp->expression_ = this->stmt_tree_.root_->expression_;
+	tmp->child_ = this->stmt_tree_.root_;
+	this->stmt_tree_.root_ = tmp;
+  }
 }
 
 expr::expr() {
