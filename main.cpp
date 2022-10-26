@@ -89,7 +89,7 @@ int main() {
   }
 
   p.parse(
-	  "SELECT AVG(table1.relId_), COUNT(table1.relId_), SUM(table1.relId_) from table1, table2 where table1.relId_ = table2.relId_ and table2.relId_ >= 90 and table1.relId_<95");
+	  "SELECT MIN(table1.relId_) from table1, table2 where table1.relId_ = table2.relId_ and table2.relId_ >= 90 and table1.relId_<95");
   o.plan(&p.stmt_tree_);
   o.Init();
   o.execute();

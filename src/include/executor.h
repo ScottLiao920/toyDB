@@ -153,7 +153,19 @@ class CountAggregateExecutor : public aggregateExecutor {
 //  void End() override;
 };
 
-class MeanAggregateExecutor : public aggregateExecutor {
+class AvgAggregateExecutor : public aggregateExecutor {
+ public:
+  void Init() override;
+  void Next(void *) override;
+};
+
+class MaxAggregateExecutor : public aggregateExecutor {
+ public:
+  void Init() override;
+  void Next(void *) override;
+};
+
+class MinAggregateExecutor : public aggregateExecutor {
  public:
   void Init() override;
   void Next(void *) override;
