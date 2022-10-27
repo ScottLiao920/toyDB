@@ -189,7 +189,23 @@ class dropExecutor : executor {
 };
 
 class insertExecutor : executor {
-  // This executor insert a row/col into a table
+  // This executor insert a row into a table
+};
+
+class copyExecutor : executor {
+  // This executor insert bunch of rows into a table
+ private:
+  storageMethod default_method = row_store;
+  std::string name_;
+
+  bool is_from_ = false;
+  std::string file_path;
+ public:
+  void SetName(std::string &inp) { name_ = std::move(inp); }
+  void SetPath(std::string inp) { this->file_path = std::move(inp); }
+  void SetDirection(bool inp) { this->is_from_ = inp; }
+  void Init() override;
+  void Next(void *dst) override { std::memset(dst, 0, 8); };
 };
 
 class updateExecutor : executor {

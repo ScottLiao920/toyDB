@@ -56,53 +56,71 @@ int main() {
   planner o;
   o.SetBufferPoolManager(&bpmgr);
 
-  rel table1, table2;
-  table1.SetName("table1");
-  table2.SetName("table2");
-  table1.add_column("relId_", sizeof(int), typeid(int));
-  table1.add_column("content", 4, typeid(std::string));
-  table2.add_column("relId_", sizeof(int), typeid(int));
-  table2.add_column("content", 4, typeid(std::string));
-  int id = 0;
-  std::string tmp_string("A");
-  for (unsigned int i = 0; i < 100; ++i) {
-	char buf[sizeof(int) + 4];
-	std::memset(buf, 0, 4 + 4);
-	std::memcpy(buf, &id, sizeof(int));
-	std::memcpy(buf + sizeof(int), tmp_string.c_str(), 4);
-	table1.add_row(sizeof(int) + 4);
-	table1.rows_.back().pages_.push_back(0); // store table1 in physical page id 0
-	table1.update_row(&bpmgr, i, buf);
-	++id;
-  }
-  id = 0;
-  tmp_string.push_back('B');
-  for (unsigned int i = 0; i < 100; ++i) {
-	char buf[sizeof(int) + 4];
-	std::memset(buf, 0, 4 + 4);
-	std::memcpy(buf, &id, sizeof(int));
-	std::memcpy(buf + sizeof(int), tmp_string.c_str(), 4);
-	table2.add_row(sizeof(int) + 4);
-	table2.rows_.back().pages_.push_back(1);
-	table2.update_row(&bpmgr, i, buf); // store table1 in physical page id 1
-	++id;
-  }
+//  rel table1, table2;
+//  table1.SetName("table1");
+//  table2.SetName("table2");
+//  table1.add_column("relId_", sizeof(int), typeid(int));
+//  table1.add_column("content", 4, typeid(std::string));
+//  table2.add_column("relId_", sizeof(int), typeid(int));
+//  table2.add_column("content", 4, typeid(std::string));
+//  int id = 0;
+//  std::string tmp_string("A");
+//  for (unsigned int i = 0; i < 100; ++i) {
+//	char buf[sizeof(int) + 4];
+//	std::memset(buf, 0, 4 + 4);
+//	std::memcpy(buf, &id, sizeof(int));
+//	std::memcpy(buf + sizeof(int), tmp_string.c_str(), 4);
+//	table1.add_row(sizeof(int) + 4);
+//	table1.rows_.back().pages_.push_back(0); // store table1 in physical page id 0
+//	table1.update_row(&bpmgr, i, buf);
+//	++id;
+//  }
+//  id = 0;
+//  tmp_string.push_back('B');
+//  for (unsigned int i = 0; i < 100; ++i) {
+//	char buf[sizeof(int) + 4];
+//	std::memset(buf, 0, 4 + 4);
+//	std::memcpy(buf, &id, sizeof(int));
+//	std::memcpy(buf + sizeof(int), tmp_string.c_str(), 4);
+//	table2.add_row(sizeof(int) + 4);
+//	table2.rows_.back().pages_.push_back(1);
+//	table2.update_row(&bpmgr, i, buf); // store table1 in physical page id 1
+//	++id;
+//  }
+
+  p.parse("CREATE TABLE table1 (relId_ int, content string(4)");
+  o.plan(p.stmt_tree_);
+  o.Init();
+  o.execute();
+
+  p.parse("COPY table1 from table1.csv");
+  o.plan(p.stmt_tree_);
+  o.Init();
+  o.execute();
 
   p.parse(
-	  "SELECT table1.relId_, table1.content, table2.content from table1, table2 where table1.relId_ = table2.relId_ and table2.relId_ >= 90 and table1.relId_<95");
+	  "SELECT table1.relId_, table1.content from table1, table2 where table1.relId_<95");
   o.plan(p.stmt_tree_);
   o.Init();
   o.execute();
 
-  p.parse("CREATE TABLE tmp_table (col1 int, col2 string(10)");
-  o.plan(p.stmt_tree_);
-  o.Init();
-  o.execute();
+//  p.parse("CREATE TABLE tmp_table (col1 int, col2 string(10)");
+//  o.plan(p.stmt_tree_);
+//  o.Init();
+//  o.execute();
+//
+//  p.parse("SELECT tmp_table.col1 from tmp_table");
+//  o.plan(p.stmt_tree_);
+//  o.Init();
+//  o.execute();
 
-  p.parse("SELECT tmp_table.col1 from tmp_table");
-  o.plan(p.stmt_tree_);
-  o.Init();
-  o.execute();
+//  p.parse("COPY table1 to table1.csv");
+//  o.plan(p.stmt_tree_);
+//  o.Init();
+//  o.execute();
+
+
+
 //  comparison_expr qual1;
 //  qual1.comparision_type = comparision::ngt;
 //  qual1.data_srcs.emplace_back(parser::processDataSrc("TABLE1.RELID_"));

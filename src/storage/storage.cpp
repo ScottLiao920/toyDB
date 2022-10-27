@@ -42,7 +42,7 @@ void physicalPage::writePage(const char *content) {
 }
 
 PhysicalPageID storageManager::addPage() {
-  physicalPage page(this->cur_page_id_);
+  auto page = new physicalPage(this->cur_page_id_);
   this->pages_.push_back(page);
   return this->cur_page_id_++; // increment the page id, but return the page just added
 }
@@ -53,11 +53,11 @@ void storageManager::writePage(PhysicalPageID page_id, void *content) {
 	this->writePage(page_id, content);
 	return;
   }
-  pages_[page_id].writePage((const char *)content);
+  pages_[page_id]->writePage((const char *)content);
 }
 
 void storageManager::readPage(PhysicalPageID page_id, void *dst) {
-  pages_[page_id].readPage((char *)dst);
+  pages_[page_id]->readPage((char *)dst);
 }
 
 column::column(std::string inp_name, size_t size, RelID par_table, const std::type_info &type) {
@@ -156,12 +156,12 @@ std::vector<PhysicalPageID> rel::GetLocation() {
   return result;
 }
 size_t rel::GetTupleSize() {
-  if (this->storage_method_ == row_store) {
-	return this->rows_[0].getSize();
+  if (this->storage_method_ == row_store && !this->rows_.empty()) {
+	return this->rows_[0].GetSize();
   } else {
 	size_t out = 0;
 	for (auto &it : this->cols_) {
-	  out += it.getSize();
+	  out += it.GetSize();
 	}
 	return out;
   }
@@ -169,7 +169,7 @@ size_t rel::GetTupleSize() {
 std::vector<size_t> rel::GetColSizes() {
   std::vector<size_t> out;
   for (auto &it : this->cols_) {
-	out.push_back(it.getSize());
+	out.push_back(it.GetSize());
   }
   return out;
 }
@@ -244,6 +244,7 @@ void row::insert(bufferPoolManager *bpmgr, char *content) {
   }
   bpmgr->insertToFrame(cur_frame, content, this->width_);
   bpmgr->writeToDisk(this->pages_.back(), cur_frame);
+  bpmgr->stmgr_->GetPage(this->pages_.back())->free_space_ -= this->width_;
 }
 toyDBTUPLE::toyDBTUPLE(char *buf, size_t len, std::vector<size_t> sizes, std::vector<size_t> type_ids) {
   this->content_ = (char *)new char[len];

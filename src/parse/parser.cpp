@@ -96,15 +96,15 @@ void parser::parse(const std::string &sql_string) {
   } else if (upp_sql.compare(0, 6, "DELETE") == 0) {
 	this->stmt_tree_->command_ = DELETE;
 	this->stmt_tree_->root_ = new parseNode;
-	this->stmt_tree_->root_->type_ = UpdateNode;
+	this->stmt_tree_->root_->type_ = DeleteNode;
   } else if (upp_sql.compare(0, 6, "CREATE") == 0) {
 	this->stmt_tree_->command_ = CREATE;
 	this->stmt_tree_->root_ = new parseNode;
 	this->stmt_tree_->root_->type_ = CreateNode;
   } else if (upp_sql.compare(0, 4, "COPY") == 0) {
-	this->stmt_tree_->command_ = INSERT;
+	this->stmt_tree_->command_ = COPY;
 	this->stmt_tree_->root_ = new parseNode;
-	this->stmt_tree_->root_->type_ = InsertNode;
+	this->stmt_tree_->root_->type_ = CopyNode;
   } else {
 	this->stmt_tree_->command_ = INVALID_COMMAND;
 	return;
@@ -299,8 +299,24 @@ void parser::parse(const std::string &sql_string) {
 	  break;
 	}
 	case INSERT: {
-
-	};
+	  break;
+	}
+	case COPY: {
+	  // COPY table_name from/to file_path(xxx.csv)
+	  std::vector<std::string> buf;
+	  split(upp_sql, " ", buf);
+	  assert(buf.size() == 4);
+	  auto cur_expr = new expr;
+	  cur_expr->type = SCHEMA;
+	  cur_expr->alias = buf.at(1);
+	  if (buf.at(2) == "FROM") {
+		cur_expr->data_srcs.emplace_back(INVALID_RELID, INVALID_COLID, 0, buf.at(buf.size() - 1));
+	  } else {
+		cur_expr->data_srcs.emplace_back(INVALID_RELID, INVALID_COLID, 1, buf.at(buf.size() - 1));
+	  }
+	  this->stmt_tree_->root_->expression_ = cur_expr;
+	  break;
+	}
 	case UPDATE:break;
 	case DELETE:break;
 	case INVALID_COMMAND:break;

@@ -175,3 +175,117 @@ void updateExecutor::Init() {
 
 }
 
+void copyExecutor::Init() {
+//  executor::Init(); // no need to initialize views.
+  rel *tab = table_schema.TableName2Table[this->name_];
+  if (tab == nullptr) {
+	std::cout << "Table " << this->name_ << " not found!" << std::endl;
+	return;
+  }
+  if (this->is_from_) {
+	std::ifstream fin;
+	fin.open(this->file_path);
+	std::string cur_line;
+	char buf[tab->GetTupleSize()];
+	std::string cur_entry;
+	size_t offset, cnt = 0;
+	while (true) {
+	  std::getline(fin, cur_line);
+	  if (cur_line.empty())
+		break;
+	  offset = 0;
+	  std::memset(buf, 0, tab->GetTupleSize());
+	  for (auto &it : tab->cols_) {
+		cur_entry = cur_line.substr(0, cur_line.find(','));
+		cur_line = cur_line.substr(cur_line.find(',') + 1);
+		switch (type_schema.typeID2type[it.typeid_]) {
+		  case (1): {
+			int tmp = std::stoi(cur_entry);
+			std::memcpy(buf + offset, &tmp, sizeof(int));
+			offset += sizeof(int);
+			break;
+		  }
+		  case (2): {
+			float tmp = std::stof(cur_entry);
+			std::memcpy(buf + offset, &tmp, sizeof(float));
+			offset += sizeof(float);
+			break;
+		  }
+		  case (3): {
+			size_t tmp = std::stoul(cur_entry);
+			std::memcpy(buf + offset, &tmp, sizeof(size_t));
+			offset += sizeof(size_t);
+			break;
+		  }
+		  case (4): {
+			const char *tmp = cur_entry.c_str();
+			std::memcpy(buf + offset, tmp, cur_entry.size());
+			offset += it.GetSize();
+			break;
+		  }
+		}
+	  }
+	  PhysicalPageID page_id;
+	  if (!tab->rows_.empty()
+		  && bpmgr_->stmgr_->GetPage(tab->rows_.back().pages_.back())->free_space_ >= tab->GetTupleSize()) {
+		page_id = tab->rows_.back().pages_.back();
+	  } else {
+		page_id = bpmgr_->stmgr_->addPage();
+	  }
+	  tab->add_row(tab->GetTupleSize());
+	  tab->rows_.back().pages_.emplace_back(page_id);
+	  tab->update_row(this->bpmgr_, cnt, buf);
+	  ++cnt;
+	}
+	fin.close();
+  } else {
+	std::ofstream fout;
+	fout.open(this->file_path);
+	auto child = new seqScanExecutor;
+	child->SetBufferPoolManager(bpmgr_);
+	child->SetTable(tab);
+	child->Init();
+	std::vector<toyDBTUPLE> out(BATCH_SIZE);
+	char buf[tab->GetTupleSize()];
+	size_t offset;
+	while (true) {
+	  child->Next(&out);
+	  if (out.empty() || out.begin()->content_ == nullptr) {
+		break;
+	  }
+	  for (auto &it : out) {
+		offset = 0;
+		for (size_t i = 0; i < it.sizes_.size(); ++i) {
+		  switch (type_schema.typeID2type[it.type_ids_[i]]) {
+			case (1): {
+			  std::memcpy(buf, it.content_ + offset, it.sizes_[i]);
+			  fout << (int)*buf << ",";
+			  offset += sizeof(int);
+			  break;
+			}
+			case (2): {
+			  std::memcpy(buf, it.content_ + offset, it.sizes_[i]);
+			  fout << (float)*buf << ",";
+			  offset += sizeof(float);
+			  break;
+			}
+			case (3): {
+			  std::memcpy(buf, it.content_ + offset, it.sizes_[i]);
+			  fout << (size_t)*buf << ",";
+			  offset += sizeof(size_t);
+			  break;
+			}
+			case (4): {
+			  std::memcpy(buf, it.content_ + offset, it.sizes_[i]);
+			  fout << buf << ",";
+			  offset += it.sizes_[i];
+			  break;
+			}
+		  }
+		}
+		fout << std::endl;
+	  }
+	}
+	fout.close();
+  }
+}

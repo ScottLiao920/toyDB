@@ -252,12 +252,24 @@ std::vector<executor *> plan_node(parseNode *parse_node, bufferPoolManager *buff
 	case ScanNode: { return plan_scan(parse_node, buffer_pool_manager); }
 	case CreateNode: {
 	  auto create_exec = new createExecutor;
-	  ((executor*)create_exec)->SetBufferPoolManager(buffer_pool_manager);
+	  ((executor *)create_exec)->SetBufferPoolManager(buffer_pool_manager);
 	  create_exec->SetName(parse_node->expression_->alias);
 	  create_exec->SetCols(parse_node->expression_->data_srcs);
 	  out.push_back((executor *)create_exec);
 	}
 	case InsertNode:break;
+	case CopyNode: {
+	  auto copy_exec = new copyExecutor;
+	  ((executor *)copy_exec)->SetBufferPoolManager(buffer_pool_manager);
+	  copy_exec->SetName(parse_node->expression_->alias);
+	  if(std::get<2>(parse_node->expression_->data_srcs[0]) == 0){
+		// COPY table to disk
+		copy_exec->SetDirection(true);
+	  }
+	  copy_exec->SetPath(FILEPATH + std::get<3>(parse_node->expression_->data_srcs[0]));
+	  out.push_back((executor *)copy_exec);
+	}
+	case DeleteNode:break;
   }
   return out;
 }

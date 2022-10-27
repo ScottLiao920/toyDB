@@ -64,7 +64,7 @@ void bufferPoolManager::readFromDisk(PhysicalPageID psy_id) {
 	this->page_table_[curPage] = psy_id;
 	this->stmgr_->readPage(psy_id, curPage->content);
 	curPage->timestamp = std::time(nullptr);
-	curPage->data_cnt = this->stmgr_->getDataCnt(psy_id);
+	curPage->data_cnt = this->stmgr_->GetDataCnt(psy_id);
 	curPage->data_ptr = curPage->content + HEAP_SIZE;
 	curPage->idx_ptr = curPage->content;
 	this->pin_cnt_[cnt] += 1;
@@ -73,7 +73,7 @@ void bufferPoolManager::readFromDisk(PhysicalPageID psy_id) {
   }
   heapPage *cleanedPage = evict();
   this->stmgr_->readPage(psy_id, cleanedPage->content);
-  cleanedPage->data_cnt = this->stmgr_->getDataCnt(psy_id);
+  cleanedPage->data_cnt = this->stmgr_->GetDataCnt(psy_id);
   this->page_table_[cleanedPage] = psy_id;
 }
 

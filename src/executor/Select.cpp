@@ -67,10 +67,10 @@ void selectExecutor::Next(void *dst) {
 		  std::string cand_name = cand_col.getName();
 		  if (cand_col.GetRelID() == target_col.GetRelID()
 			  && cand_name.find(target_col.getName()) != std::string::npos) {
-			std::memcpy(tmp_buf, buf->cbegin()->content_ + buf_offset, target_col.getSize());
+			std::memcpy(tmp_buf, buf->cbegin()->content_ + buf_offset, target_col.GetSize());
 			break;
 		  }
-		  buf_offset += cand_col.getSize();
+		  buf_offset += cand_col.GetSize();
 		}
 
 //		std::memcpy(tmp_buf, buf->cbegin()->content_ + offset, col_size);

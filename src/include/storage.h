@@ -20,9 +20,8 @@ class physicalPage {
   PhysicalPageID cur_id_ = 0;
   std::string file_path_;
   size_t data_cnt_ = 0;
-  size_t free_space_ = PHYSICAL_PAGE_SIZE;
-
  public:
+  size_t free_space_ = PHYSICAL_PAGE_SIZE;
   physicalPage() = default;
 
   explicit physicalPage(PhysicalPageID);
@@ -32,18 +31,27 @@ class physicalPage {
   void writePage(const char *);
 
   size_t getDataCnt() { return this->data_cnt_; }
-
+  PhysicalPageID GetID() { return this->cur_id_; }
   size_t getFreeSpace() { return this->free_space_; }
 };
 
 class storageManager {
  private:
   PhysicalPageID cur_page_id_ = 0;
-  std::vector<physicalPage> pages_;
+  std::vector<physicalPage *> pages_;
  public:
   storageManager() = default;;
 
-  size_t getDataCnt(size_t idx) { return this->pages_[idx].getDataCnt(); };
+  size_t GetDataCnt(size_t idx) { return this->pages_[idx]->getDataCnt(); };
+
+  physicalPage *GetPage(PhysicalPageID inp) {
+	for (auto it : pages_) {
+	  if (it->GetID() == inp) {
+		return it;
+	  }
+	}
+	return nullptr;
+  }
 
   PhysicalPageID addPage();
 
@@ -88,7 +96,7 @@ class column {
   column(std::string, size_t, RelID, const std::type_info &);
   column(std::string, size_t, RelID, size_t);
   void SetName(std::string inp) { this->name_ = std::move(inp); }
-  size_t getSize() { return this->width_; }
+  size_t GetSize() { return this->width_; }
   std::string getName() { return this->name_; }
   void SetTable(RelID id) { this->rel_ = id; }
   RelID GetRelID() { return this->rel_; };
@@ -100,11 +108,11 @@ class row {
   size_t cnt_;
   RelID par_;
  public:
-  row(size_t, RelID);
-  size_t getSize() { return this->width_; }
-  void insert(bufferPoolManager *, char *);
   std::vector<PhysicalPageID> pages_;
-  void setPages(std::vector<PhysicalPageID> p) { this->pages_ = p; };
+  row(size_t, RelID);
+  size_t GetSize() { return this->width_; }
+  void insert(bufferPoolManager *, char *);
+  void SetPages(std::vector<PhysicalPageID> p) { this->pages_ = std::move(p); };
 };
 
 class rel {

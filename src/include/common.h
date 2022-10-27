@@ -37,13 +37,15 @@ enum command_type {
   SELECT,
   CREATE,
   INSERT,
+  COPY,
   UPDATE,
   DELETE,
   INVALID_COMMAND
 };
 
 enum ParseNodeType {
-  SelectNode, JoinNode, ScanNode, AggrNode, CreateNode, InsertNode, UpdateNode, CompNode, EmptyNode
+  SelectNode, JoinNode, ScanNode, AggrNode, CreateNode, InsertNode, UpdateNode, CompNode, EmptyNode,
+  CopyNode, DeleteNode
 };
 
 enum comparision {
@@ -69,7 +71,7 @@ enum update {
   CREATION, DELETION, INSERTION, ALTERATION
 };
 
-enum SUPPORTED_TYPES{
+enum SUPPORTED_TYPES {
   INT, FLOAT, SIZE_T, STRING
 };
 
