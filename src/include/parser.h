@@ -12,13 +12,14 @@
 #include "storage.h"
 #include "common.h"
 #include "regex"
-//#include <boost/algorithm/string.hpp>
 
 class expr {
  public:
   expr_type type;
   std::string alias;
-  std::vector<std::tuple<size_t, size_t, size_t, std::string>> data_srcs; // RelID, ColID, typeID, raw input
+  std::vector<std::tuple<size_t, size_t, size_t, std::string>> data_srcs;
+  // RelID, ColID, typeID, raw input
+  // INVALID_RELID, Column width, typeid, column name for schema
 
   expr();
 
@@ -62,9 +63,9 @@ class queryTree {
 
 class parser {
  public:
-  queryTree stmt_tree_;
-
-  parser() = default;
+  queryTree* stmt_tree_;
+  std::vector<queryTree *> prev_stmts;
+  parser();
 
   void parse(const std::string &);
   static std::tuple<size_t, size_t, size_t, std::string> processDataSrc(const std::string &);

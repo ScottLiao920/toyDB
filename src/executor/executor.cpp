@@ -78,10 +78,12 @@ void executor::SetBufferPoolManager(bufferPoolManager *manager) {
   this->bpmgr_ = manager;
 }
 void createExecutor::Init() {
-  executor::Init();
-}
-void createExecutor::setStorageManager(storageManager *manager) {
-  this->storage_manager_ = manager;
+//  executor::Init(); // no need to initialize views.
+  auto table = new rel;
+  table->SetName(this->name_);
+  for (const auto &it : this->cols_) {
+	table->add_column(std::get<3>(it), std::get<1>(it), std::get<2>(it));
+  }
 }
 void indexExecutor::Init() {
   executor::Init();
@@ -166,3 +168,10 @@ toyDBTUPLE *joinExecutor::Join(toyDBTUPLE *left, toyDBTUPLE *right) {
   out->type_ids_ = f_types;
   return out;
 }
+void updateExecutor::Init() {
+//  executor::Init();
+  this->table_->add_row(0);
+  this->table_->update_row(this->bpmgr_, this->cnt_, this->mem_context_);
+
+}
+

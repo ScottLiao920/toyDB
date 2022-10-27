@@ -168,7 +168,7 @@ std::vector<executor *> plan_node(parseNode *parse_node, bufferPoolManager *buff
 	  // Need to verify the data source to feed into SetColumn (should be raw column name)
 	  for (auto it : child_plans) {
 		switch (((aggr_expr *)parse_node->expression_)->aggr_type) {
-		  case MIN:{
+		  case MIN: {
 			auto tmp = new MinAggregateExecutor;
 			tmp->SetBufferPoolManager(buffer_pool_manager);
 			tmp->SetChild(it);
@@ -176,7 +176,7 @@ std::vector<executor *> plan_node(parseNode *parse_node, bufferPoolManager *buff
 			out.push_back(tmp);
 			break;
 		  };
-		  case MAX:{
+		  case MAX: {
 			auto tmp = new MaxAggregateExecutor;
 			tmp->SetBufferPoolManager(buffer_pool_manager);
 			tmp->SetChild(it);
@@ -239,7 +239,9 @@ std::vector<executor *> plan_node(parseNode *parse_node, bufferPoolManager *buff
 	  }
 	  break;
 	}
-	case UpdateNode:break;
+	case UpdateNode: {
+	  break;
+	}
 	case CompNode: { // add qualification to scan executor;
 	  return plan_scan(parse_node, buffer_pool_manager);
 	}
@@ -248,6 +250,14 @@ std::vector<executor *> plan_node(parseNode *parse_node, bufferPoolManager *buff
 	}
 	case EmptyNode:break;
 	case ScanNode: { return plan_scan(parse_node, buffer_pool_manager); }
+	case CreateNode: {
+	  auto create_exec = new createExecutor;
+	  ((executor*)create_exec)->SetBufferPoolManager(buffer_pool_manager);
+	  create_exec->SetName(parse_node->expression_->alias);
+	  create_exec->SetCols(parse_node->expression_->data_srcs);
+	  out.push_back((executor *)create_exec);
+	}
+	case InsertNode:break;
   }
   return out;
 }
@@ -256,6 +266,11 @@ void planner::plan(queryTree *query_tree) {
   /*
    * This method generate root based on target list, then iteratively go thru all qualifications & generate plan on them recursively
    */
+  if (not this->trees.empty()) {
+	this->prev_trees.insert(this->prev_trees.end(), std::make_move_iterator(this->trees.begin()),
+							std::make_move_iterator(this->trees.end()));
+	this->trees.clear();
+  }
   auto out = plan_node(query_tree->root_, this->bpmgr_);
   size_t cur_min = 0xFFFFFFFF;
   for (auto tmp : out) {

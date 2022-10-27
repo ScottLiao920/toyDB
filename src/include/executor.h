@@ -174,12 +174,14 @@ class MinAggregateExecutor : public aggregateExecutor {
 class createExecutor : executor {
   // This executor creates a table
  private:
-  storageManager *storage_manager_;
-
+  storageMethod default_method = row_store;
+  std::string name_;
+  std::vector<std::tuple<size_t, size_t, size_t, std::string>> cols_;
  public:
   void Init() override;
-  void setStorageManager(storageManager *);
-
+  void SetName(std::string &inp) { name_ = std::move(inp); }
+  void SetCols(std::vector<std::tuple<size_t, size_t, size_t, std::string>> &inp) { cols_ = std::move(inp); }
+  void Next(void *dst) override { std::memset(dst, 0, 8); };
 };
 
 class dropExecutor : executor {
@@ -192,6 +194,10 @@ class insertExecutor : executor {
 
 class updateExecutor : executor {
   // This executor update toyDBTUPLE(s) in a table
+  rel *table_ = nullptr;
+  size_t cnt_ = 0;
+ public:
+  void Init() override;
 };
 
 class indexExecutor : executor {

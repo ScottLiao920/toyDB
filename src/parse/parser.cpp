@@ -74,185 +74,246 @@ std::tuple<size_t, size_t, size_t, std::string> parser::processDataSrc(const std
 }
 
 void parser::parse(const std::string &sql_string) {
+  if (this->stmt_tree_->root_ != nullptr) {
+	this->prev_stmts.emplace_back(this->stmt_tree_);
+	this->stmt_tree_ = new queryTree;
+  }
+
   std::string upp_sql = sql_string;
   std::transform(upp_sql.begin(), upp_sql.end(), upp_sql.begin(), ::toupper);
   if (upp_sql.compare(0, 6, "SELECT") == 0) {
-	this->stmt_tree_.command_ = SELECT;
-	this->stmt_tree_.root_ = new parseNode;
-	this->stmt_tree_.root_->type_ = SelectNode;
+	this->stmt_tree_->command_ = SELECT;
+	this->stmt_tree_->root_ = new parseNode;
+	this->stmt_tree_->root_->type_ = SelectNode;
   } else if (upp_sql.compare(0, 6, "INSERT") == 0) {
-	this->stmt_tree_.command_ = INSERT;
-	this->stmt_tree_.root_ = new parseNode;
-	this->stmt_tree_.root_->type_ = UpdateNode;
+	this->stmt_tree_->command_ = INSERT;
+	this->stmt_tree_->root_ = new parseNode;
+	this->stmt_tree_->root_->type_ = InsertNode;
   } else if (upp_sql.compare(0, 6, "UPDATE") == 0) {
-	this->stmt_tree_.command_ = UPDATE;
-	this->stmt_tree_.root_ = new parseNode;
-	this->stmt_tree_.root_->type_ = UpdateNode;
+	this->stmt_tree_->command_ = UPDATE;
+	this->stmt_tree_->root_ = new parseNode;
+	this->stmt_tree_->root_->type_ = UpdateNode;
   } else if (upp_sql.compare(0, 6, "DELETE") == 0) {
-	this->stmt_tree_.command_ = DELETE;
-	this->stmt_tree_.root_ = new parseNode;
-	this->stmt_tree_.root_->type_ = UpdateNode;
+	this->stmt_tree_->command_ = DELETE;
+	this->stmt_tree_->root_ = new parseNode;
+	this->stmt_tree_->root_->type_ = UpdateNode;
+  } else if (upp_sql.compare(0, 6, "CREATE") == 0) {
+	this->stmt_tree_->command_ = CREATE;
+	this->stmt_tree_->root_ = new parseNode;
+	this->stmt_tree_->root_->type_ = CreateNode;
+  } else if (upp_sql.compare(0, 4, "COPY") == 0) {
+	this->stmt_tree_->command_ = INSERT;
+	this->stmt_tree_->root_ = new parseNode;
+	this->stmt_tree_->root_->type_ = InsertNode;
   } else {
-	this->stmt_tree_.command_ = INVALID_COMMAND;
+	this->stmt_tree_->command_ = INVALID_COMMAND;
 	return;
   }
-  upp_sql = upp_sql.substr(6);
-  std::smatch TL_RTE; //vector of raw string for target list and range table (optional)
-  std::regex_search(upp_sql, TL_RTE, std::regex("FROM"));
-  std::vector<std::string> target_list;
-  split(std::string(TL_RTE.format("$`")), ",", target_list);
-  parseNode *cur_parse_node = this->stmt_tree_.root_;
-  for (auto &it : target_list) {
-	expr *cur_expr = new expr;
-	cur_parse_node->expression_ = cur_expr;
+  switch (this->stmt_tree_->command_) {
+	case (SELECT): {
+	  upp_sql = upp_sql.substr(6);
+	  std::smatch TL_RTE; //vector of raw string for target list and range table (optional)
+	  std::regex_search(upp_sql, TL_RTE, std::regex("FROM"));
+	  std::vector<std::string> target_list;
+	  split(std::string(TL_RTE.format("$`")), ",", target_list);
+	  parseNode *cur_parse_node = this->stmt_tree_->root_;
+	  for (auto &it : target_list) {
+		expr *cur_expr = new expr;
+		cur_parse_node->expression_ = cur_expr;
 
-	// check for alias
-	if (it.find("AS") != std::string::npos) {
-	  std::vector<std::string> name_alias;
-	  split(it, "AS", name_alias);
-	  assert(name_alias.size() == 2);
-	  cur_expr->alias = name_alias[1];
-	  it = it.substr(0, it.find("AS"));
-	} else {
-	  // just use input as alias
-	  cur_expr->alias = it;
-	}
-	cur_expr->alias.erase(std::remove(cur_expr->alias.begin(), cur_expr->alias.end(), ' '), cur_expr->alias.end());
-
-	// check for aggregation, nested aggregation (MIN(MAX(...) )) currently not supported.
-	cur_parse_node->type_ = AggrNode;
-	if (it.find("MIN(") != std::string::npos) {
-	  this->stmt_tree_.hasAgg = true;
-	  cur_expr->type = AGGR;
-	  ((aggr_expr *)cur_expr)->aggr_type = MIN;
-	  it = it.substr(it.find("MIN(") + 4);
-	  cur_expr->data_srcs.push_back(processDataSrc(it.substr(0, it.find(")"))));
-	} else if (it.find("MAX(") != std::string::npos) {
-	  this->stmt_tree_.hasAgg = true;
-	  cur_expr->type = AGGR;
-	  ((aggr_expr *)cur_expr)->aggr_type = MAX;
-	  it = it.substr(it.find("MAX(") + 4);
-	  cur_expr->data_srcs.push_back(processDataSrc(it.substr(0, it.find(")"))));
-	} else if (it.find("AVG(") != std::string::npos) {
-	  this->stmt_tree_.hasAgg = true;
-	  cur_expr->type = AGGR;
-	  ((aggr_expr *)cur_expr)->aggr_type = AVG;
-	  it = it.substr(it.find("AVG(") + 4);
-	  cur_expr->data_srcs.push_back(processDataSrc(it.substr(0, it.find(")"))));
-	} else if (it.find("COUNT(") != std::string::npos) {
-	  this->stmt_tree_.hasAgg = true;
-	  cur_expr->type = AGGR;
-	  ((aggr_expr *)cur_expr)->aggr_type = COUNT;
-	  it = it.substr(it.find("COUNT(") + 6);
-	  cur_expr->data_srcs.push_back(processDataSrc(it.substr(0, it.find(")"))));
-	} else if (it.find("SUM(") != std::string::npos) {
-	  this->stmt_tree_.hasAgg = true;
-	  cur_expr->type = AGGR;
-	  ((aggr_expr *)cur_expr)->aggr_type = SUM;
-	  it = it.substr(it.find("SUM(") + 4);
-	  cur_expr->data_srcs.push_back(processDataSrc(it.substr(0, it.find(")"))));
-	} else {
-	  cur_expr->type = COL;
-	  cur_parse_node->type_ = SelectNode;
-	  cur_expr->data_srcs.emplace_back(processDataSrc(it));
-	}
-	this->stmt_tree_.target_list_.push_back(cur_expr);
-	cur_parse_node->child_ = new parseNode;
-	cur_parse_node = cur_parse_node->child_;
-  }
-
-  // split remaining SQL statement into range table list and qualifications
-  std::vector<std::string> RTE_qual;
-  split(TL_RTE.format("$'"), "WHERE", RTE_qual);
-  std::vector<std::string> tmp_range_table;
-  split(RTE_qual[0], ",", tmp_range_table);
-  this->stmt_tree_.range_table_ = tmp_range_table;
-  if (RTE_qual.size() == 1) {
-	// no WHERE clauses
-  } else {
-	std::vector<std::string> quals;
-	split(RTE_qual[1], "AND", quals);
-	for (const auto &it : quals) {
-	  // check qualifications in WHERE clause
-	  expr *cur_qual = new expr;
-	  std::smatch op;
-	  std::regex op_regex("[=<>!]+");
-	  std::regex_search(it, op, op_regex);
-	  if (not op.empty()) {
-		cur_qual->type = COMP;
-		std::string all_op = op.format("$&");
-		std::string first_operand, second_operand;
-		first_operand = op.format("$`");
-		second_operand = op.format("$'");
-		first_operand.erase(std::remove_if(first_operand.begin(),
-										   first_operand.end(),
-										   [](unsigned char x) { return std::isspace(x); }), first_operand.end());
-		second_operand.erase(std::remove_if(second_operand.begin(),
-											second_operand.end(),
-											[](unsigned char x) { return std::isspace(x); }), second_operand.end());
-		cur_qual->data_srcs.push_back(processDataSrc(first_operand));
-		cur_qual->data_srcs.push_back(processDataSrc(second_operand));
-		// check comparison type and assign it accordingly. Maybe have a dict for it?
-		if (all_op == "<=") {
-		  ((comparison_expr *)cur_qual)->comparision_type = ngt;
-		} else if (all_op == "<") {
-		  ((comparison_expr *)cur_qual)->comparision_type = lt;
-		} else if (all_op == ">") {
-		  ((comparison_expr *)cur_qual)->comparision_type = gt;
-		} else if (all_op == ">=") {
-		  ((comparison_expr *)cur_qual)->comparision_type = nlt;
-		} else if (all_op == "=") {
-		  ((comparison_expr *)cur_qual)->comparision_type = equal;
-		} else if (all_op == "!=") {
-		  ((comparison_expr *)cur_qual)->comparision_type = ne;
+		// check for alias
+		if (it.find("AS") != std::string::npos) {
+		  std::vector<std::string> name_alias;
+		  split(it, "AS", name_alias);
+		  assert(name_alias.size() == 2);
+		  cur_expr->alias = name_alias[1];
+		  it = it.substr(0, it.find("AS"));
 		} else {
-		  ((comparison_expr *)cur_qual)->comparision_type = NO_COMP;
+		  // just use input as alias
+		  cur_expr->alias = it;
 		}
-	  } else {
-		std::cout << "Parse Error: Qualification List Init Failed." << std::endl;
-	  }
-	  this->stmt_tree_.qual_.push_back(cur_qual);
-	  cur_parse_node->expression_ = cur_qual;
-	  if (std::get<0>(cur_qual->data_srcs[0]) != INVALID_RELID
-		  && std::get<0>(cur_qual->data_srcs[1]) != INVALID_RELID) {
-		cur_parse_node->type_ = JoinNode;
-	  } else {
-		cur_parse_node->type_ = CompNode;
-	  }
-	  cur_parse_node->child_ = new parseNode;
-	  cur_parse_node = cur_parse_node->child_;
-	}
-  }
-  cur_parse_node->type_ = EmptyNode;
+		cur_expr->alias.erase(std::remove(cur_expr->alias.begin(), cur_expr->alias.end(), ' '), cur_expr->alias.end());
 
-  /*
-	* If the root of query tree is an aggregation node, push its child selection nodes upwards (this only make
-	* sense if it's a group by sql statement) or make a new selection node as its parent.
-  */
-  if (this->stmt_tree_.root_->type_ == AggrNode && this->stmt_tree_.hasGroup) {
-	// push selection nodes upwards (NOT TESTED)
-	cur_parse_node = this->stmt_tree_.root_;
-	while (cur_parse_node->child_->type_ == AggrNode) {
-	  cur_parse_node = cur_parse_node->child_;
-	}
-  } else if (this->stmt_tree_.root_->type_ == AggrNode) {
-	cur_parse_node = this->stmt_tree_.root_;
-	while(cur_parse_node->type_==AggrNode){
-	  auto tmp = new parseNode;
-	  tmp->type_ = SelectNode;
-	  tmp->expression_ = cur_parse_node->expression_;
-	  tmp->child_ = this->stmt_tree_.root_;
-	  this->stmt_tree_.root_ = tmp;
-	  cur_parse_node = cur_parse_node->child_;
-	}
+		// check for aggregation, nested aggregation (MIN(MAX(...) )) currently not supported.
+		cur_parse_node->type_ = AggrNode;
+		if (it.find("MIN(") != std::string::npos) {
+		  this->stmt_tree_->hasAgg = true;
+		  cur_expr->type = AGGR;
+		  ((aggr_expr *)cur_expr)->aggr_type = MIN;
+		  it = it.substr(it.find("MIN(") + 4);
+		  cur_expr->data_srcs.push_back(processDataSrc(it.substr(0, it.find(")"))));
+		} else if (it.find("MAX(") != std::string::npos) {
+		  this->stmt_tree_->hasAgg = true;
+		  cur_expr->type = AGGR;
+		  ((aggr_expr *)cur_expr)->aggr_type = MAX;
+		  it = it.substr(it.find("MAX(") + 4);
+		  cur_expr->data_srcs.push_back(processDataSrc(it.substr(0, it.find(")"))));
+		} else if (it.find("AVG(") != std::string::npos) {
+		  this->stmt_tree_->hasAgg = true;
+		  cur_expr->type = AGGR;
+		  ((aggr_expr *)cur_expr)->aggr_type = AVG;
+		  it = it.substr(it.find("AVG(") + 4);
+		  cur_expr->data_srcs.push_back(processDataSrc(it.substr(0, it.find(")"))));
+		} else if (it.find("COUNT(") != std::string::npos) {
+		  this->stmt_tree_->hasAgg = true;
+		  cur_expr->type = AGGR;
+		  ((aggr_expr *)cur_expr)->aggr_type = COUNT;
+		  it = it.substr(it.find("COUNT(") + 6);
+		  cur_expr->data_srcs.push_back(processDataSrc(it.substr(0, it.find(")"))));
+		} else if (it.find("SUM(") != std::string::npos) {
+		  this->stmt_tree_->hasAgg = true;
+		  cur_expr->type = AGGR;
+		  ((aggr_expr *)cur_expr)->aggr_type = SUM;
+		  it = it.substr(it.find("SUM(") + 4);
+		  cur_expr->data_srcs.push_back(processDataSrc(it.substr(0, it.find(")"))));
+		} else {
+		  cur_expr->type = COL;
+		  cur_parse_node->type_ = SelectNode;
+		  cur_expr->data_srcs.emplace_back(processDataSrc(it));
+		}
+		this->stmt_tree_->target_list_.push_back(cur_expr);
+		cur_parse_node->child_ = new parseNode;
+		cur_parse_node = cur_parse_node->child_;
+	  }
 
+	  // split remaining SQL statement into range table list and qualifications
+	  std::vector<std::string> RTE_qual;
+	  split(TL_RTE.format("$'"), "WHERE", RTE_qual);
+	  std::vector<std::string> tmp_range_table;
+	  split(RTE_qual[0], ",", tmp_range_table);
+	  this->stmt_tree_->range_table_ = tmp_range_table;
+	  if (RTE_qual.size() == 1) {
+		// no WHERE clauses
+	  } else {
+		std::vector<std::string> quals;
+		split(RTE_qual[1], "AND", quals);
+		for (const auto &it : quals) {
+		  // check qualifications in WHERE clause
+		  expr *cur_qual = new expr;
+		  std::smatch op;
+		  std::regex op_regex("[=<>!]+");
+		  std::regex_search(it, op, op_regex);
+		  if (not op.empty()) {
+			cur_qual->type = COMP;
+			std::string all_op = op.format("$&");
+			std::string first_operand, second_operand;
+			first_operand = op.format("$`");
+			second_operand = op.format("$'");
+			first_operand.erase(std::remove_if(first_operand.begin(),
+											   first_operand.end(),
+											   [](unsigned char x) { return std::isspace(x); }), first_operand.end());
+			second_operand.erase(std::remove_if(second_operand.begin(),
+												second_operand.end(),
+												[](unsigned char x) { return std::isspace(x); }), second_operand.end());
+			cur_qual->data_srcs.push_back(processDataSrc(first_operand));
+			cur_qual->data_srcs.push_back(processDataSrc(second_operand));
+			// check comparison type and assign it accordingly. Maybe have a dict for it?
+			if (all_op == "<=") {
+			  ((comparison_expr *)cur_qual)->comparision_type = ngt;
+			} else if (all_op == "<") {
+			  ((comparison_expr *)cur_qual)->comparision_type = lt;
+			} else if (all_op == ">") {
+			  ((comparison_expr *)cur_qual)->comparision_type = gt;
+			} else if (all_op == ">=") {
+			  ((comparison_expr *)cur_qual)->comparision_type = nlt;
+			} else if (all_op == "=") {
+			  ((comparison_expr *)cur_qual)->comparision_type = equal;
+			} else if (all_op == "!=") {
+			  ((comparison_expr *)cur_qual)->comparision_type = ne;
+			} else {
+			  ((comparison_expr *)cur_qual)->comparision_type = NO_COMP;
+			}
+		  } else {
+			std::cout << "Parse Error: Qualification List Init Failed." << std::endl;
+		  }
+		  this->stmt_tree_->qual_.push_back(cur_qual);
+		  cur_parse_node->expression_ = cur_qual;
+		  if (std::get<0>(cur_qual->data_srcs[0]) != INVALID_RELID
+			  && std::get<0>(cur_qual->data_srcs[1]) != INVALID_RELID) {
+			cur_parse_node->type_ = JoinNode;
+		  } else {
+			cur_parse_node->type_ = CompNode;
+		  }
+		  cur_parse_node->child_ = new parseNode;
+		  cur_parse_node = cur_parse_node->child_;
+		}
+	  }
+	  cur_parse_node->type_ = EmptyNode;
+
+	  /*
+		* If the root of query tree is an aggregation node, push its child selection nodes upwards (this only make
+		* sense if it's a group by sql statement) or make a new selection node as its parent.
+	  */
+	  if (this->stmt_tree_->root_->type_ == AggrNode && this->stmt_tree_->hasGroup) {
+		// push selection nodes upwards (NOT TESTED)
+		cur_parse_node = this->stmt_tree_->root_;
+		while (cur_parse_node->child_->type_ == AggrNode) {
+		  cur_parse_node = cur_parse_node->child_;
+		}
+	  } else if (this->stmt_tree_->root_->type_ == AggrNode) {
+		cur_parse_node = this->stmt_tree_->root_;
+		while (cur_parse_node->type_ == AggrNode) {
+		  auto tmp = new parseNode;
+		  tmp->type_ = SelectNode;
+		  tmp->expression_ = cur_parse_node->expression_;
+		  tmp->child_ = this->stmt_tree_->root_;
+		  this->stmt_tree_->root_ = tmp;
+		  cur_parse_node = cur_parse_node->child_;
+		}
+
+	  }
+	  break;
+	}
+	case (CREATE): {
+	  // CREATE TABLE TABLE_NAME (COLUMN_NAME dtype, COLUMN_NAME dtype, ...)
+	  std::string tab_name = upp_sql.substr(upp_sql.find("TABLE") + 6);
+	  tab_name = tab_name.substr(0, tab_name.find('(') - 1);
+	  upp_sql = upp_sql.substr(upp_sql.find('(') + 1);
+	  std::vector<std::string> buf;
+	  split(upp_sql, ",", buf);
+	  expr *cur_expr = new expr;
+	  cur_expr->type = SCHEMA;
+	  cur_expr->alias = std::move(tab_name);
+	  for (const auto &it : buf) {
+		std::vector<std::string> out;
+		split(it, " ", out);
+		std::string col_name = out.at(out.size() - 2);
+		std::string dtype_name = out.at(out.size() - 1);
+		size_t type_id, width;
+		if (std::strcmp(dtype_name.c_str(), "INT") == 0) {
+		  type_id = typeid(int).hash_code();
+		  width = sizeof(int);
+		} else if (std::strcmp(dtype_name.c_str(), "FLOAT") == 0) {
+		  type_id = typeid(float).hash_code();
+		  width = sizeof(float);
+		} else if (std::strncmp(dtype_name.c_str(), "STRING", 6) == 0) {
+		  type_id = typeid(std::string).hash_code();
+		  width = std::stoul(dtype_name.substr(7, -1));
+		} else if (std::strcmp(dtype_name.c_str(), "SIZE_T") == 0) {
+		  type_id = typeid(size_t).hash_code();
+		  width = sizeof(size_t);
+		}
+		cur_expr->data_srcs.emplace_back(INVALID_RELID, width, type_id, col_name);
+	  }
+	  this->stmt_tree_->root_->expression_ = cur_expr;
+	  break;
+	}
+	case INSERT: {
+
+	};
+	case UPDATE:break;
+	case DELETE:break;
+	case INVALID_COMMAND:break;
   }
+}
+parser::parser() {
+  this->stmt_tree_ = new queryTree;
 }
 
 expr::expr() {
   alias.reserve(16);
   type = COL;
-  data_srcs.reserve(2);
+//  data_srcs.reserve(2);
 //    std::memset(&alias, 0, 16);
 }
 
@@ -334,12 +395,12 @@ bool comparison_expr::compareFunc(char *lhs_ptr, char *rhs_ptr) {
 	  return this->compare(*lhs, rhs);
 	}
 	case (0x200000004): {
-	  auto lhs = (float*)lhs_ptr;
+	  auto lhs = (float *)lhs_ptr;
 	  auto rhs = (float)std::strtof(rhs_ptr, nullptr);
 	  return this->compare(*lhs, rhs);
 	}
 	case (0x300000004): {
-	  auto lhs = (size_t*)lhs_ptr;
+	  auto lhs = (size_t *)lhs_ptr;
 	  auto rhs = std::strtoul(rhs_ptr, nullptr, 0);
 	  return this->compare(*lhs, rhs);
 	}

@@ -35,6 +35,7 @@ static RowID INVALID_ROWID = 0xFFFFFFFF;
 
 enum command_type {
   SELECT,
+  CREATE,
   INSERT,
   UPDATE,
   DELETE,
@@ -42,7 +43,7 @@ enum command_type {
 };
 
 enum ParseNodeType {
-  SelectNode, JoinNode, ScanNode, AggrNode, UpdateNode, CompNode, EmptyNode
+  SelectNode, JoinNode, ScanNode, AggrNode, CreateNode, InsertNode, UpdateNode, CompNode, EmptyNode
 };
 
 enum comparision {
@@ -61,7 +62,15 @@ enum aggr {
 };
 
 enum expr_type {
-  AGGR, COMP, COL
+  AGGR, COMP, COL, SCHEMA
+};
+
+enum update {
+  CREATION, DELETION, INSERTION, ALTERATION
+};
+
+enum SUPPORTED_TYPES{
+  INT, FLOAT, SIZE_T, STRING
 };
 
 #endif //TOYDB_COMMON_H

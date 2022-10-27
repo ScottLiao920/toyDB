@@ -12,7 +12,7 @@ void seqScanExecutor::Init() {
   this->view_->SetName("Seq Scan View for Tab " + this->table_->GetName());
   this->view_->cols_ = this->table_->cols_; // Scan executors are leaf executors so no need to set column sources again.
   this->cnt_ = 0;
-  this->pages_ = this->table_->get_location();
+  this->pages_ = this->table_->GetLocation();
   if (this->bpmgr_->findPage(this->pages_[0]) == nullptr) {
 	this->bpmgr_->readFromDisk(this->pages_[0]);
   }
@@ -26,7 +26,7 @@ void seqScanExecutor::Init(rel *tab, bufferPoolManager *manager, comparison_expr
   this->view_->cols_ = tab->cols_; // Scan executors are leaf executors so no need to set column sources again.
   this->quals_.emplace_back(qual);
   this->cnt_ = 0;
-  this->pages_ = this->table_->get_location();
+  this->pages_ = this->table_->GetLocation();
   if (manager->findPage(this->pages_[0]) == nullptr) {
 	manager->readFromDisk(this->pages_[0]);
   }
@@ -35,7 +35,7 @@ void seqScanExecutor::Init(rel *tab, bufferPoolManager *manager, comparison_expr
 void seqScanExecutor::Next(void *dst) {
   //Iterate until a tuple matched predicate or all tuples emitted.
   while (true) {
-	size_t len = this->table_->get_tuple_size();
+	size_t len = this->table_->GetTupleSize();
 	std::vector<size_t> sizes = this->table_->GetColSizes();
 //  size_t col_idx = std::get<1>(this->quals_->data_srcs[0]);
 	if (this->mode_ == volcano) {

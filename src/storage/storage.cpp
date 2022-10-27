@@ -67,6 +67,13 @@ column::column(std::string inp_name, size_t size, RelID par_table, const std::ty
   this->rel_ = par_table;
   this->cnt_ = 0;
 }
+column::column(std::string inp_name, size_t size, RelID par_table, size_t type_id) {
+  this->name_ = inp_name;
+  this->width_ = size;
+  this->typeid_ = type_id;
+  this->rel_ = par_table;
+  this->cnt_ = 0;
+}
 
 void rel::SetName(std::string inp) {
   this->name_ = std::move(inp);
@@ -108,6 +115,9 @@ void rel::add_row(const row &inp_row) {
 void rel::add_column(const std::string &inp_name, const size_t &inp_size, const std::type_info &type_info) {
   this->cols_.emplace_back(inp_name, inp_size, this->relId_, type_info);
 }
+void rel::add_column(const std::string &inp_name, const size_t &inp_size, const size_t &type_id) {
+  this->cols_.emplace_back(inp_name, inp_size, this->relId_, type_id);
+}
 
 void rel::add_column(const column &inp_column) {
   this->cols_.push_back(inp_column);
@@ -132,7 +142,7 @@ void rel::update_row(bufferPoolManager *bpmgr, std::vector<row>::size_type idx, 
 	return;
   }
 }
-std::vector<PhysicalPageID> rel::get_location() {
+std::vector<PhysicalPageID> rel::GetLocation() {
   std::vector<PhysicalPageID> result;
   if (this->storage_method_ == row_store) {
 	for (const auto &it : this->rows_) {
@@ -145,7 +155,7 @@ std::vector<PhysicalPageID> rel::get_location() {
   }
   return result;
 }
-size_t rel::get_tuple_size() {
+size_t rel::GetTupleSize() {
   if (this->storage_method_ == row_store) {
 	return this->rows_[0].getSize();
   } else {

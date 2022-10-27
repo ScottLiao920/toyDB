@@ -83,14 +83,15 @@ class column {
   size_t cnt_;
   RelID rel_;
  public:
+  size_t typeid_;
+  std::vector<PhysicalPageID> pages_;
+  column(std::string, size_t, RelID, const std::type_info &);
+  column(std::string, size_t, RelID, size_t);
   void SetName(std::string inp) { this->name_ = std::move(inp); }
   size_t getSize() { return this->width_; }
   std::string getName() { return this->name_; }
-  column(std::string, size_t, RelID, const std::type_info &);
   void SetTable(RelID id) { this->rel_ = id; }
-  std::vector<PhysicalPageID> pages_;
   RelID GetRelID() { return this->rel_; };
-  size_t typeid_;
 };
 
 class row {
@@ -133,8 +134,9 @@ class rel {
   void add_columns(const std::vector<std::string> &, const std::vector<size_t> &, const std::vector<std::type_info> &);
   void add_column(const column &);
   void add_column(const std::string &, const size_t &, const std::type_info &);
-  std::vector<PhysicalPageID> get_location();
-  size_t get_tuple_size();
+  void add_column(const std::string &, const size_t &, const size_t &);
+  std::vector<PhysicalPageID> GetLocation();
+  size_t GetTupleSize();
   std::vector<size_t> GetColSizes();
   std::string GetName() { return this->name_; }
   size_t GetOffset(const std::string &);

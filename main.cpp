@@ -89,8 +89,18 @@ int main() {
   }
 
   p.parse(
-	  "SELECT MIN(table1.relId_) from table1, table2 where table1.relId_ = table2.relId_ and table2.relId_ >= 90 and table1.relId_<95");
-  o.plan(&p.stmt_tree_);
+	  "SELECT table1.relId_, table1.content, table2.content from table1, table2 where table1.relId_ = table2.relId_ and table2.relId_ >= 90 and table1.relId_<95");
+  o.plan(p.stmt_tree_);
+  o.Init();
+  o.execute();
+
+  p.parse("CREATE TABLE tmp_table (col1 int, col2 string(10)");
+  o.plan(p.stmt_tree_);
+  o.Init();
+  o.execute();
+
+  p.parse("SELECT tmp_table.col1 from tmp_table");
+  o.plan(p.stmt_tree_);
   o.Init();
   o.execute();
 //  comparison_expr qual1;
