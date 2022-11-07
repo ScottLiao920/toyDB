@@ -14,8 +14,9 @@
 #define PHYSICAL_PAGE_SIZE 8192
 #define HEAP_SIZE 8192
 #define BUFFER_POOL_SIZE 16
-#define EXEC_MEM 8192*2
+#define EXEC_MEM (8192*2)
 #define BATCH_SIZE 1
+#define FAN_OUT_FACT 5
 
 enum storageMethod {
   row_store, col_store

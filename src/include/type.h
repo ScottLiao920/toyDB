@@ -14,10 +14,10 @@ class TypeSchema {
  public:
   std::map<size_t, size_t> typeID2type;
   TypeSchema() {
-	typeID2type[typeid(int).hash_code()] = 1;
-	typeID2type[typeid(float).hash_code()] = 2;
-	typeID2type[typeid(size_t).hash_code()] = 3;
-	typeID2type[typeid(std::string).hash_code()] = 4;
+	typeID2type[typeid(int).hash_code()] = SUPPORTED_TYPES::INT;
+	typeID2type[typeid(float).hash_code()] = SUPPORTED_TYPES::FLOAT;
+	typeID2type[typeid(size_t).hash_code()] = SUPPORTED_TYPES::SIZE_T;
+	typeID2type[typeid(std::string).hash_code()] = SUPPORTED_TYPES::STRING;
   }
 };
 

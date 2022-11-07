@@ -34,8 +34,8 @@ void testBTree() {
 
 int main() {
   storageManager stmgr;
-  stmgr.addPage();
-  stmgr.addPage();
+//  stmgr.addPage();
+//  stmgr.addPage();
   bufferPoolManager bpmgr(&stmgr);
 //  const char *tmp = "hello world";
 //  char *dst = (char *)malloc(8192);

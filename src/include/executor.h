@@ -12,6 +12,7 @@
 #include "common.h"
 #include "bufferpool.h"
 #include "parser.h"
+#include "btree.h"
 
 class executor {
   //abstract class for all the executors
@@ -113,9 +114,16 @@ class nestedLoopJoinExecutor : public joinExecutor {
 };
 
 class hashJoinExecutor : joinExecutor {
-  void Init() override {};
-  void Next(void *dst) override {};
-  void End() override {};
+ private:
+  void *left_index_tree_ = nullptr;
+  std::string col_name;
+ public:
+  void Init() override;
+  void SetLeft(executor *left) { this->left_child_ = left; };
+  void SetRight(executor *right) { this->right_child_ = right; };
+  void SetPredicate(comparison_expr *tmp) { this->pred_ = tmp; };
+  void Next(void *dst) override;
+  void End() override;
 };
 
 class mergeJoinExecutor : joinExecutor {
