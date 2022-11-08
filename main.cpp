@@ -3,6 +3,7 @@
 // Veni, vidi, vici
 
 #include <iostream>
+#include <chrono>
 #include "storage.h"
 #include "bufferpool.h"
 #include "parser.h"
@@ -98,12 +99,25 @@ int main() {
   o.Init();
   o.execute();
 
-  p.parse(
-	  "SELECT table1.relId_, table1.content from table1, table2 where table1.relId_<95");
+  p.parse("CREATE TABLE table2 (relId_ int, content string(4)");
   o.plan(p.stmt_tree_);
   o.Init();
   o.execute();
 
+  p.parse("COPY table2 from table2.csv");
+  o.plan(p.stmt_tree_);
+  o.Init();
+  o.execute();
+
+  auto begin = std::chrono::high_resolution_clock::now();
+  p.parse(
+	  "SELECT table1.relId_, table1.content, table2.content from table1, table2 where table1.relId_ = table2.relId_ and table1.relId_>95");
+  o.plan(p.stmt_tree_);
+  o.Init();
+  o.execute();
+  auto end = std::chrono::high_resolution_clock::now();
+  double elapsed_time_ms = std::chrono::duration<double, std::milli>(end - begin).count();
+  std::cout << elapsed_time_ms;
 //  p.parse("CREATE TABLE tmp_table (col1 int, col2 string(10)");
 //  o.plan(p.stmt_tree_);
 //  o.Init();
@@ -180,6 +194,6 @@ int main() {
 //	std::cout << std::endl;
 //  }
 //  nested_loop_join_executor.End();
-////  testBTree();
+//  testBTree();
   return 0;
 }

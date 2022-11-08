@@ -33,7 +33,7 @@ void hashJoinExecutor::Init() {
 
   this->col_name = std::get<3>(this->pred_->data_srcs[0]).substr(std::get<3>(this->pred_->data_srcs[0]).find('.') + 1);
   // Also builds a hash table on left child.
-  std::vector<toyDBTUPLE> buf;
+  std::vector<toyDBTUPLE> buf(BATCH_SIZE);
   while (true) {
 	this->left_child_->Next(&buf);
 	if (buf.empty() || buf.begin()->content_ == nullptr) {
@@ -90,7 +90,7 @@ void hashJoinExecutor::Init() {
   }
 }
 void hashJoinExecutor::Next(void *dst) {
-  std::vector<toyDBTUPLE> buf;
+  std::vector<toyDBTUPLE> buf(BATCH_SIZE);
   size_t cnt = 0;
   while (cnt < BATCH_SIZE) {
 	this->right_child_->Next(&buf);
@@ -105,7 +105,7 @@ void hashJoinExecutor::Next(void *dst) {
 	  switch (type_schema.typeID2type[buf.begin()->type_ids_[r_tab->GetColIdx(this->col_name)]]) {
 		case (INT): {
 		  auto tmp = ((bTree<int> *)this->left_index_tree_)->search(*((int *)it.content_ + offset));
-		  found = (tmp == nullptr);
+		  found = (tmp != nullptr);
 		  auto loc = tmp->findIndex(*((int *)it.content_ + offset));
 		  this->curLeftTuple.content_ =
 			  this->mem_context_ + std::get<1>(tmp->GetTupleLoc(loc)) * this->curLeftTuple.size_;
@@ -113,7 +113,7 @@ void hashJoinExecutor::Next(void *dst) {
 		}
 		case (FLOAT): {
 		  auto tmp = ((bTree<float> *)this->left_index_tree_)->search(*((float *)it.content_ + offset));
-		  found = (tmp == nullptr);
+		  found = (tmp != nullptr);
 		  auto loc = tmp->findIndex(*((float *)it.content_ + offset));
 		  this->curLeftTuple.content_ =
 			  this->mem_context_ + std::get<1>(tmp->GetTupleLoc(loc)) * this->curLeftTuple.size_;
@@ -121,7 +121,7 @@ void hashJoinExecutor::Next(void *dst) {
 		}
 		case (SIZE_T): {
 		  auto tmp = ((bTree<size_t> *)this->left_index_tree_)->search(*((size_t *)it.content_ + offset));
-		  found = (tmp == nullptr);
+		  found = (tmp != nullptr);
 		  auto loc = tmp->findIndex(*((size_t *)it.content_ + offset));
 		  this->curLeftTuple.content_ =
 			  this->mem_context_ + std::get<1>(tmp->GetTupleLoc(loc)) * this->curLeftTuple.size_;
@@ -132,7 +132,7 @@ void hashJoinExecutor::Next(void *dst) {
 		}
 	  }
 	  if (found) {
-		((std::vector<toyDBTUPLE> *)dst)->push_back(*this->Join(&this->curLeftTuple, &it));
+		((std::vector<toyDBTUPLE> *)dst)->at(cnt) = *this->Join(&this->curLeftTuple, &it);
 		++cnt;
 	  }
 	}

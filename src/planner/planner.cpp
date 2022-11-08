@@ -9,6 +9,7 @@
 #include "planner.h"
 
 #include <utility>
+#include <chrono>
 #include "schema.h"
 
 std::vector<executor *> plan_scan(parseNode *parse_node, bufferPoolManager *buffer_pool_manager);
@@ -32,15 +33,25 @@ std::vector<executor *> get_all_join_plans(executor *left,
   nlj1->SetRight(right);
   nlj1->SetBufferPoolManager(buffer_pool_manager);
   nlj1->SetPredicate(join_predicate);
-//  nlj1->Init(); // Init will trigger Next() of left & right child
 
   nlj2->SetLeft(right);
   nlj2->SetRight(left);
   nlj2->SetBufferPoolManager(buffer_pool_manager);
   nlj2->SetPredicate(join_predicate);
-//  nlj2->Init(); // Init will trigger Next() of left & right child
+
+  auto hj1 = new hashJoinExecutor;
+  hj1->SetLeft(left);
+  hj1->SetRight(right);
+  hj1->SetBufferPoolManager(buffer_pool_manager);
+  hj1->SetPredicate(join_predicate);
+
+  auto hj2 = new hashJoinExecutor;
+  hj2->SetLeft(right);
+  hj2->SetRight(left);
+  hj2->SetBufferPoolManager(buffer_pool_manager);
+  hj2->SetPredicate(join_predicate);
   // Hash join & merge join to be implemented.
-  return {nlj1, nlj2};
+  return {nlj1, nlj2, hj1, hj2};
 }
 
 std::vector<executor *> plan_join(parseNode *parse_node, bufferPoolManager *buffer_pool_manager) {
@@ -262,7 +273,7 @@ std::vector<executor *> plan_node(parseNode *parse_node, bufferPoolManager *buff
 	  auto copy_exec = new copyExecutor;
 	  ((executor *)copy_exec)->SetBufferPoolManager(buffer_pool_manager);
 	  copy_exec->SetName(parse_node->expression_->alias);
-	  if(std::get<2>(parse_node->expression_->data_srcs[0]) == 0){
+	  if (std::get<2>(parse_node->expression_->data_srcs[0]) == 0) {
 		// COPY table to disk
 		copy_exec->SetDirection(true);
 	  }
@@ -304,6 +315,29 @@ void planner::execute() {
   }
   this->cheapest_tree_->root->End();
 }
+void planner::execute_all() {
+  char stopper[8];
+  for (auto it : this->trees) {
+	std::memset(stopper, 0, 8);
+	auto begin = std::chrono::high_resolution_clock::now();
+	while (true) {
+	  char indicator[8];
+	  std::get<0>(it)->root->Next(indicator);
+	  if (std::memcmp(indicator, stopper, 8) == 0) {
+		break;
+	  }
+	}
+	auto end = std::chrono::high_resolution_clock::now();
+	std::get<0>(it)->root->End();
+	double elapsed_time_ms = std::chrono::duration<double, std::milli>(end - begin).count();
+	std::cout << elapsed_time_ms;
+  }
+}
 void planner::Init() {
   this->cheapest_tree_->root->Init();
+}
+void planner::Init_all() {
+  for (auto it : this->trees) {
+	std::get<0>(it)->root->Init();
+  }
 }

@@ -29,7 +29,9 @@ class planner {
   void plan(queryTree *);
   void Init();
   void execute();
+  void execute_all();
   void SetBufferPoolManager(bufferPoolManager *buffer_pool_manager) { this->bpmgr_ = buffer_pool_manager; };
+  void Init_all();
 };
 
 #endif //TOYDB_PLANNER_H

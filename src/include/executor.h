@@ -113,7 +113,7 @@ class nestedLoopJoinExecutor : public joinExecutor {
   void End() override;
 };
 
-class hashJoinExecutor : joinExecutor {
+class hashJoinExecutor : public joinExecutor {
  private:
   void *left_index_tree_ = nullptr;
   std::string col_name;
