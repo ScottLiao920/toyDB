@@ -27,7 +27,9 @@ class bTreeNode {
   void insertNonFull(T k, tupleLocType loc);
   void splitChild(int i, bTreeNode<T> *y);
   void traverse();
-  bTreeNode<T> *search(int k);
+  bTreeNode<T> *search(T k);
+  size_t findIndex(T k);
+  tupleLocType GetTupleLoc(size_t idx);
   template<typename type>
   friend
   class bTree;

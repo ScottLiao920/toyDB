@@ -353,22 +353,22 @@ bool comparison_expr::compare(const char *lhs_ptr, const char *rhs_ptr, size_t t
 //  std::cout << "Comparing " << (int)*lhs_ptr << " from left side with "
 //			<< (int)*rhs_ptr << " from right side" << std::endl;
   switch (type_schema.typeID2type[type_id]) {
-	case (1): {
+	case (SUPPORTED_TYPES::INT): {
 	  auto lhs = (int *)lhs_ptr;
 	  int rhs = std::strtoll(rhs_ptr, nullptr, 0);
 	  return this->compare(*lhs, rhs);
 	}
-	case (2): {
+	case (SUPPORTED_TYPES::FLOAT): {
 	  auto lhs = (float *)lhs_ptr;
 	  auto rhs = (float)std::strtof(rhs_ptr, nullptr);
 	  return this->compare(*lhs, rhs);
 	}
-	case (3): {
+	case (SUPPORTED_TYPES::SIZE_T): {
 	  auto lhs = (size_t *)lhs_ptr;
 	  size_t rhs = std::strtoul(rhs_ptr, nullptr, 0);
 	  return this->compare(*lhs, rhs);
 	}
-	case (4): {
+	case (SUPPORTED_TYPES::STRING): {
 	  std::string lhs(lhs_ptr);
 	  std::string rhs(rhs_ptr);
 	  return this->compare(lhs, rhs);
@@ -385,37 +385,37 @@ unsigned long long makepair(size_t type1, size_t type2) {
 bool comparison_expr::compareFunc(char *lhs_ptr, char *rhs_ptr) {
   unsigned long long specifier = makepair(std::get<2>(this->data_srcs[0]), std::get<2>(this->data_srcs[1]));
   switch (specifier) {
-	case (0x100000001): {
+	case (0x000000000): {
 	  auto lhs = (int *)lhs_ptr;
 	  auto rhs = (int *)rhs_ptr;
 	  return this->compare(*lhs, *rhs);
 	}
-	case (0x200000002): {
+	case (0x100000001): {
 	  auto lhs = (float *)lhs_ptr;
 	  auto rhs = (float *)rhs_ptr;
 	  return this->compare(*lhs, *rhs);
 	}
-	case (0x300000003): {
+	case (0x200000002): {
 	  auto lhs = (size_t *)lhs_ptr;
 	  auto rhs = (size_t *)rhs_ptr;
 	  return this->compare(*lhs, *rhs);
 	}
-	case (0x400000004): {
+	case (0x300000003): {
 	  auto lhs = (int *)lhs_ptr;
 	  int rhs = std::strtoll(rhs_ptr, nullptr, 0);
 	  return this->compare(*lhs, rhs);
 	}
-	case (0x100000004): {
+	case (0x000000003): {
 	  auto lhs = (int *)lhs_ptr;
 	  int rhs = std::strtoul(rhs_ptr, nullptr, 0);
 	  return this->compare(*lhs, rhs);
 	}
-	case (0x200000004): {
+	case (0x100000003): {
 	  auto lhs = (float *)lhs_ptr;
 	  auto rhs = (float)std::strtof(rhs_ptr, nullptr);
 	  return this->compare(*lhs, rhs);
 	}
-	case (0x300000004): {
+	case (0x200000003): {
 	  auto lhs = (size_t *)lhs_ptr;
 	  auto rhs = std::strtoul(rhs_ptr, nullptr, 0);
 	  return this->compare(*lhs, rhs);

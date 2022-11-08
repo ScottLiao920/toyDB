@@ -83,31 +83,48 @@ void hashJoinExecutor::Init() {
 		std::cout << "Trying to build Index on a string!";
 	  }
 	}
+	if (this->curLeftTuple.size_ == 0) {
+	  curLeftTuple = buf.at(0);
+	  curLeftTuple.content_ = nullptr;
+	}
   }
 }
 void hashJoinExecutor::Next(void *dst) {
   std::vector<toyDBTUPLE> buf;
-  while (true) {
+  size_t cnt = 0;
+  while (cnt < BATCH_SIZE) {
 	this->right_child_->Next(&buf);
 	if (buf.empty() || buf.begin()->content_ == nullptr) {
 	  ((std::vector<toyDBTUPLE> *)dst)->clear();
 	  break;
 	}
 	rel *r_tab = table_schema.TableID2Table[buf.begin()->table_];
-	for (const auto &it : buf) {
+	for (auto it : buf) {
 	  bool found = false;
 	  size_t offset = r_tab->GetOffset(this->col_name);
 	  switch (type_schema.typeID2type[buf.begin()->type_ids_[r_tab->GetColIdx(this->col_name)]]) {
 		case (INT): {
-		  found = (((bTree<int> *)this->left_index_tree_)->search(*((int *)it.content_ + offset)) == nullptr);
+		  auto tmp = ((bTree<int> *)this->left_index_tree_)->search(*((int *)it.content_ + offset));
+		  found = (tmp == nullptr);
+		  auto loc = tmp->findIndex(*((int *)it.content_ + offset));
+		  this->curLeftTuple.content_ =
+			  this->mem_context_ + std::get<1>(tmp->GetTupleLoc(loc)) * this->curLeftTuple.size_;
 		  break;
 		}
 		case (FLOAT): {
-		  found = (((bTree<float> *)this->left_index_tree_)->search(*((float *)it.content_ + offset)) == nullptr);
+		  auto tmp = ((bTree<float> *)this->left_index_tree_)->search(*((float *)it.content_ + offset));
+		  found = (tmp == nullptr);
+		  auto loc = tmp->findIndex(*((float *)it.content_ + offset));
+		  this->curLeftTuple.content_ =
+			  this->mem_context_ + std::get<1>(tmp->GetTupleLoc(loc)) * this->curLeftTuple.size_;
 		  break;
 		}
 		case (SIZE_T): {
-		  found = (((bTree<size_t> *)this->left_index_tree_)->search(*((size_t *)it.content_ + offset)) == nullptr);
+		  auto tmp = ((bTree<size_t> *)this->left_index_tree_)->search(*((size_t *)it.content_ + offset));
+		  found = (tmp == nullptr);
+		  auto loc = tmp->findIndex(*((size_t *)it.content_ + offset));
+		  this->curLeftTuple.content_ =
+			  this->mem_context_ + std::get<1>(tmp->GetTupleLoc(loc)) * this->curLeftTuple.size_;
 		  break;
 		}
 		case (STRING): {
@@ -115,12 +132,13 @@ void hashJoinExecutor::Next(void *dst) {
 		}
 	  }
 	  if (found) {
-
+		((std::vector<toyDBTUPLE> *)dst)->push_back(*this->Join(&this->curLeftTuple, &it));
+		++cnt;
 	  }
 	}
   }
 }
-void nestedLoopJoinExecutor::End() {
+void hashJoinExecutor::End() {
   executor::End();
   this->left_child_->End();
   this->right_child_->End();

@@ -117,6 +117,7 @@ class hashJoinExecutor : joinExecutor {
  private:
   void *left_index_tree_ = nullptr;
   std::string col_name;
+  toyDBTUPLE curLeftTuple;
  public:
   void Init() override;
   void SetLeft(executor *left) { this->left_child_ = left; };

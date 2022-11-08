@@ -199,25 +199,25 @@ void copyExecutor::Init() {
 		cur_entry = cur_line.substr(0, cur_line.find(','));
 		cur_line = cur_line.substr(cur_line.find(',') + 1);
 		switch (type_schema.typeID2type[it.typeid_]) {
-		  case (1): {
+		  case (SUPPORTED_TYPES::INT): {
 			int tmp = std::stoi(cur_entry);
 			std::memcpy(buf + offset, &tmp, sizeof(int));
 			offset += sizeof(int);
 			break;
 		  }
-		  case (2): {
+		  case (SUPPORTED_TYPES::FLOAT): {
 			float tmp = std::stof(cur_entry);
 			std::memcpy(buf + offset, &tmp, sizeof(float));
 			offset += sizeof(float);
 			break;
 		  }
-		  case (3): {
+		  case (SUPPORTED_TYPES::SIZE_T): {
 			size_t tmp = std::stoul(cur_entry);
 			std::memcpy(buf + offset, &tmp, sizeof(size_t));
 			offset += sizeof(size_t);
 			break;
 		  }
-		  case (4): {
+		  case (SUPPORTED_TYPES::STRING): {
 			const char *tmp = cur_entry.c_str();
 			std::memcpy(buf + offset, tmp, cur_entry.size());
 			offset += it.GetSize();
@@ -257,25 +257,25 @@ void copyExecutor::Init() {
 		offset = 0;
 		for (size_t i = 0; i < it.sizes_.size(); ++i) {
 		  switch (type_schema.typeID2type[it.type_ids_[i]]) {
-			case (1): {
+			case (SUPPORTED_TYPES::INT): {
 			  std::memcpy(buf, it.content_ + offset, it.sizes_[i]);
 			  fout << (int)*buf << ",";
 			  offset += sizeof(int);
 			  break;
 			}
-			case (2): {
+			case (SUPPORTED_TYPES::FLOAT): {
 			  std::memcpy(buf, it.content_ + offset, it.sizes_[i]);
 			  fout << (float)*buf << ",";
 			  offset += sizeof(float);
 			  break;
 			}
-			case (3): {
+			case (SUPPORTED_TYPES::SIZE_T): {
 			  std::memcpy(buf, it.content_ + offset, it.sizes_[i]);
 			  fout << (size_t)*buf << ",";
 			  offset += sizeof(size_t);
 			  break;
 			}
-			case (4): {
+			case (SUPPORTED_TYPES::STRING): {
 			  std::memcpy(buf, it.content_ + offset, it.sizes_[i]);
 			  fout << buf << ",";
 			  offset += it.sizes_[i];

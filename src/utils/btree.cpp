@@ -72,7 +72,7 @@ void bTreeNode<T>::traverse() {
   }
 }
 template<class T>
-bTreeNode<T> *bTreeNode<T>::search(int k) {
+bTreeNode<T> *bTreeNode<T>::search(T k) {
   int i = 0;
   while (i < this->cnt_ && k > this->keys_[i])
 	i++;
@@ -83,28 +83,51 @@ bTreeNode<T> *bTreeNode<T>::search(int k) {
   return this->children_[i]->search(k);
 }
 template<class T>
+size_t bTreeNode<T>::findIndex(T k) {
+  int i = 0;
+  while (i < this->cnt_ && k > this->keys_[i])
+	i++;
+  if (this->keys_[i] == k)
+	return i;
+  if (this->isLeaf_ == true)
+	return cnt_;
+}
+template<class T>
+tupleLocType bTreeNode<T>::GetTupleLoc(size_t idx) {
+  return this->loc_[idx];
+}
+template<class T>
 void bTree<T>::insert(T k, tupleLocType loc) {
-  if (root_ == NULL) {
-	root_ = new bTreeNode<T>(t_, true);
-	root_->keys_[0] = k;
-	root_->cnt_ = 1;
+  if (this->root_ == nullptr) {
+	this->root_ = new bTreeNode<T>(t_, true);
+	this->root_->keys_[0] = k;
+	this->root_->cnt_ = 1;
   } else {
-	if (root_->cnt_ == 2 * t_ - 1) {
+	if (this->root_->cnt_ == 2 * t_ - 1) {
 	  auto *s = new bTreeNode<T>(t_, false);
-	  s->children_[0] = root_;
-	  s->splitChild(0, root_);
+	  s->children_[0] = this->root_;
+	  s->splitChild(0, this->root_);
 	  int i = 0;
 	  if (s->keys_[0] < k)
 		i++;
 	  s->children_[i]->insertNonFull(k, loc);
-	  root_ = s;
+	  this->root_ = s;
 	} else
-	  root_->insertNonFull(k, loc);
+	  this->root_->insertNonFull(k, loc);
   }
 }
 
 template
 class bTreeNode<int>;
-
 template
 class bTree<int>;
+
+template
+class bTreeNode<float>;
+template
+class bTree<float>;
+
+template
+class bTreeNode<size_t>;
+template
+class bTree<size_t>;

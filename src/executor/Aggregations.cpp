@@ -64,19 +64,19 @@ void SumAggregateExecutor::Next(void *dst) {
 	for (auto it : child_output) {
 	  type_id = type_schema.typeID2type[it.type_ids_[col_idx]];
 	  switch (type_schema.typeID2type[it.type_ids_[col_idx]]) {
-		case (1): {
+		case (SUPPORTED_TYPES::INT): {
 		  auto tmp = (long long *)result_;
 		  *tmp += (int)(*(it.content_ + col_offset));
 		  std::memcpy(result_, tmp, sizeof(long long));
 		  break;
 		}
-		case (2): {
+		case (SUPPORTED_TYPES::FLOAT): {
 		  auto tmp = (double *)result_;
 		  *tmp += (double)(*(it.content_ + col_offset));
 		  std::memcpy(result_, tmp, sizeof(double));
 		  break;
 		}
-		case (3): {
+		case (SUPPORTED_TYPES::SIZE_T): {
 		  auto tmp = (unsigned long long *)result_;
 		  *tmp += (unsigned long long)(*(it.content_ + col_offset));
 		  std::memcpy(result_, tmp, sizeof(unsigned long long));
@@ -175,19 +175,19 @@ void AvgAggregateExecutor::Next(void *dst) {
 	  ++cnt;
 	  type_idx = type_schema.typeID2type[it.type_ids_[col_idx]];
 	  switch (type_schema.typeID2type[it.type_ids_[col_idx]]) {
-		case (1): {
+		case (SUPPORTED_TYPES::INT): {
 		  auto tmp = (long long *)result_;
 		  *tmp += (int)(*(it.content_ + col_offset));
 		  std::memcpy(result_, tmp, sizeof(long long));
 		  break;
 		}
-		case (2): {
+		case (SUPPORTED_TYPES::FLOAT): {
 		  auto tmp = (double *)result_;
 		  *tmp += (double)(*(it.content_ + col_offset));
 		  std::memcpy(result_, tmp, sizeof(double));
 		  break;
 		}
-		case (3): {
+		case (SUPPORTED_TYPES::SIZE_T): {
 		  auto tmp = (unsigned long long *)result_;
 		  *tmp += (unsigned long long)(*(it.content_ + col_offset));
 		  std::memcpy(result_, tmp, sizeof(unsigned long long));
@@ -198,19 +198,19 @@ void AvgAggregateExecutor::Next(void *dst) {
 	}
   }
   switch (type_idx) {
-	case (1): {
+	case (SUPPORTED_TYPES::INT): {
 	  auto tmp = (long long *)this->result_;
 	  *tmp /= cnt;
 	  std::memcpy(this->result_, tmp, sizeof(long long));
 	  break;
 	}
-	case (2): {
+	case (SUPPORTED_TYPES::FLOAT): {
 	  auto tmp = (double *)this->result_;
 	  *tmp /= (double)cnt;
 	  std::memcpy(this->result_, tmp, sizeof(double));
 	  break;
 	}
-	case (3): {
+	case (SUPPORTED_TYPES::SIZE_T): {
 	  auto tmp = (unsigned long long *)this->result_;
 	  *tmp /= cnt;
 	  std::memcpy(this->result_, tmp, sizeof(unsigned long long));
@@ -262,7 +262,7 @@ void MaxAggregateExecutor::Next(void *dst) {
 	for (auto it : child_output) {
 	  type_id = type_schema.typeID2type[it.type_ids_[col_idx]];
 	  switch (type_schema.typeID2type[it.type_ids_[col_idx]]) {
-		case (1): {
+		case (SUPPORTED_TYPES::INT): {
 		  auto tmp = (long long *)result_;
 		  if (*tmp < (int)(*(it.content_ + col_offset))) {
 			*tmp = (int)(*(it.content_ + col_offset));
@@ -270,7 +270,7 @@ void MaxAggregateExecutor::Next(void *dst) {
 		  }
 		  break;
 		}
-		case (2): {
+		case (SUPPORTED_TYPES::FLOAT): {
 		  auto tmp = (double *)result_;
 		  if (*tmp < (double)(*(it.content_ + col_offset))) {
 			*tmp = (double)(*(it.content_ + col_offset));
@@ -278,7 +278,7 @@ void MaxAggregateExecutor::Next(void *dst) {
 		  }
 		  break;
 		}
-		case (3): {
+		case (SUPPORTED_TYPES::SIZE_T): {
 		  auto tmp = (unsigned long long *)result_;
 		  if (*tmp < (unsigned long long)(*(it.content_ + col_offset))) {
 			*tmp = (unsigned long long)((unsigned char)*(it.content_ + col_offset));
@@ -335,7 +335,7 @@ void MinAggregateExecutor::Next(void *dst) {
 	for (auto it : child_output) {
 	  type_id = type_schema.typeID2type[it.type_ids_[col_idx]];
 	  switch (type_schema.typeID2type[it.type_ids_[col_idx]]) {
-		case (1): {
+		case (SUPPORTED_TYPES::INT): {
 		  auto tmp = (long long *)result_;
 		  if (*tmp > (int)(*(it.content_ + col_offset)) || !found) {
 			*tmp = (int)(*(it.content_ + col_offset));
@@ -344,7 +344,7 @@ void MinAggregateExecutor::Next(void *dst) {
 		  }
 		  break;
 		}
-		case (2): {
+		case (SUPPORTED_TYPES::FLOAT): {
 		  auto tmp = (double *)result_;
 		  if (*tmp > (double)(*(it.content_ + col_offset)) || !found) {
 			*tmp = (double)(*(it.content_ + col_offset));
@@ -353,7 +353,7 @@ void MinAggregateExecutor::Next(void *dst) {
 		  }
 		  break;
 		}
-		case (3): {
+		case (SUPPORTED_TYPES::SIZE_T): {
 		  auto tmp = (unsigned long long *)result_;
 		  if (*tmp > (unsigned long long)(*(it.content_ + col_offset)) || !found) {
 			*tmp = (unsigned long long)((unsigned char)*(it.content_ + col_offset));

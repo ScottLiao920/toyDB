@@ -76,19 +76,19 @@ void selectExecutor::Next(void *dst) {
 //		std::memcpy(tmp_buf, buf->cbegin()->content_ + offset, col_size);
 		std::cout << "|" << std::setw(this->targetList_[cnt]->alias.size());
 		switch (type_schema.typeID2type[target_col.typeid_]) {
-		  case (1): {
+		  case (SUPPORTED_TYPES::INT): {
 			std::cout << *((int *)tmp_buf);
 			break;
 		  }
-		  case (2): {
+		  case (SUPPORTED_TYPES::FLOAT): {
 			std::cout << *((float *)tmp_buf);
 			break;
 		  }
-		  case (3): {
+		  case (SUPPORTED_TYPES::SIZE_T): {
 			std::cout << *((size_t *)tmp_buf);
 			break;
 		  }
-		  case (4): {
+		  case (SUPPORTED_TYPES::STRING): {
 			std::cout << std::string(tmp_buf);
 			break;
 		  }
