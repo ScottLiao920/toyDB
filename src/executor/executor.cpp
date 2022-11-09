@@ -64,7 +64,6 @@ void executor::tfree(char *dst) {
 void executor::End() {
   PhysicalPageID tmp = this->bpmgr_->stmgr_->addPage();
   this->bpmgr_->stmgr_->writePage(tmp, this->mem_context_);
-  this->bpmgr_;
 //  free(this->mem_context_);
 }
 

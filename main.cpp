@@ -109,12 +109,12 @@ int main() {
   o.Init();
   o.execute();
 
-  auto begin = std::chrono::high_resolution_clock::now();
   p.parse(
 	  "SELECT table1.relId_, table1.content, table2.content from table1, table2 where table1.relId_ = table2.relId_ and table1.relId_>95");
   o.plan(p.stmt_tree_);
-  o.Init();
-  o.execute();
+  auto begin = std::chrono::high_resolution_clock::now();
+  o.Init_all();
+  o.execute_all();
   auto end = std::chrono::high_resolution_clock::now();
   double elapsed_time_ms = std::chrono::duration<double, std::milli>(end - begin).count();
   std::cout << elapsed_time_ms;

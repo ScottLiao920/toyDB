@@ -69,7 +69,8 @@ std::vector<executor *> plan_join(parseNode *parse_node, bufferPoolManager *buff
 		// plan scan on parse_node->child_->expression_->data_srcs[0]
 		scan_node = generate_scan_node(parse_node->expression_->data_srcs[0]);
 	  }
-	  auto scan_plans = plan_scan(&scan_node, buffer_pool_manager);
+	  auto scan_plans = plan_scan(&scan_node,
+								  buffer_pool_manager);
 	  // combination of join plans and scan plans
 	  for (auto it : scan_plans) {
 		for (auto it2 : join_plans) {
@@ -168,7 +169,7 @@ std::vector<executor *> plan_node(parseNode *parse_node, bufferPoolManager *buff
   std::vector<executor *> out;
   switch (parse_node->type_) {
 	case AggrNode: {
-	  //TODO: It should plan non-aggregation nodes first?
+	  //TODO: should plan non-aggregation nodes first?
 	  std::vector<parseNode *> aggr_nodes;
 	  parseNode *cur_node = parse_node;
 	  while (cur_node->type_ == AggrNode) {
@@ -337,6 +338,7 @@ void planner::Init() {
   this->cheapest_tree_->root->Init();
 }
 void planner::Init_all() {
+  // FIXME: currently the same executor is used in multiple plans. it might runs out of view memory & causes lots of trouble.
   for (auto it : this->trees) {
 	std::get<0>(it)->root->Init();
   }
