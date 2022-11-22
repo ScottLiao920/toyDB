@@ -233,7 +233,15 @@ std::vector<executor *> plan_node(parseNode *parse_node, bufferPoolManager *buff
 		select_nodes.push_back(cur_node);
 		cur_node = cur_node->child_;
 	  }
-	  auto child_plans = plan_node(cur_node, buffer_pool_manager);
+	  std::vector<executor *> child_plans;
+	  if (cur_node->type_ == EmptyNode) {
+		for (auto select_node : select_nodes) {
+		  auto tmp_plans = plan_scan(select_node, buffer_pool_manager);
+		  child_plans.insert(child_plans.end(), tmp_plans.begin(), tmp_plans.end());
+		}
+	  } else {
+		child_plans = plan_node(cur_node, buffer_pool_manager);
+	  }
 	  // Generate select executor's target list
 	  std::vector<expr *> target_list;
 	  for (auto it : select_nodes) {
