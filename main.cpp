@@ -89,40 +89,40 @@ int main() {
 //	++id;
 //  }
 
-  p.parse("CREATE TABLE table1 (relId_ int, content string(4)");
-  o.plan(p.stmt_tree_);
-  o.Init();
-  o.execute();
-
-  p.parse("COPY table1 from table1.csv");
-  o.plan(p.stmt_tree_);
-  o.Init();
-  o.execute();
-
-  p.parse("CREATE TABLE table2 (relId_ int, content string(4)");
-  o.plan(p.stmt_tree_);
-  o.Init();
-  o.execute();
-
-  p.parse("COPY table2 from table2.csv");
-  o.plan(p.stmt_tree_);
-  o.Init();
-  o.execute();
-
+//  p.parse("CREATE TABLE table1 (relId_ int, content string(4)");
+//  o.plan(p.stmt_tree_);
+//  o.Init();
+//  o.execute();
+//
+//  p.parse("COPY table1 from table1.csv");
+//  o.plan(p.stmt_tree_);
+//  o.Init();
+//  o.execute();
+//
+//  p.parse("CREATE TABLE table2 (relId_ int, content string(4)");
+//  o.plan(p.stmt_tree_);
+//  o.Init();
+//  o.execute();
+//
+//  p.parse("COPY table2 from table2.csv");
+//  o.plan(p.stmt_tree_);
+//  o.Init();
+//  o.execute();
+//
+////  p.parse(
+////	  "SELECT table1.relId_, table1.content from table1 where table1.relId_>95");
 //  p.parse(
-//	  "SELECT table1.relId_, table1.content from table1 where table1.relId_>95");
-  p.parse(
-	  "SELECT table1.relId_, table1.content, table2.content from table1, table2 where table1.relId_ = table2.relId_ and table1.relId_>95");
-  o.plan(p.stmt_tree_);
-  auto begin = std::chrono::high_resolution_clock::now();
-  o.Init();
-  auto init_time = std::chrono::high_resolution_clock::now();
-  o.execute();
-  auto end = std::chrono::high_resolution_clock::now();
-  double init_time_ms = std::chrono::duration<double, std::milli>(init_time - begin).count();
-  double exec_time_ms = std::chrono::duration<double, std::milli>(end - init_time).count();
+//	  "SELECT table1.relId_, table1.content, table2.content from table1, table2 where table1.relId_ = table2.relId_ and table1.relId_>95");
+//  o.plan(p.stmt_tree_);
+//  auto begin = std::chrono::high_resolution_clock::now();
+//  o.Init();
+//  auto init_time = std::chrono::high_resolution_clock::now();
+//  o.execute();
+//  auto end = std::chrono::high_resolution_clock::now();
+//  double init_time_ms = std::chrono::duration<double, std::milli>(init_time - begin).count();
+//  double exec_time_ms = std::chrono::duration<double, std::milli>(end - init_time).count();
+//  std::cout << exec_time_ms << "ms | " << init_time_ms << "ms";
 
-  std::cout << exec_time_ms << "ms | " << init_time_ms << "ms";
 //  p.parse("CREATE TABLE tmp_table (col1 int, col2 string(10)");
 //  o.plan(p.stmt_tree_);
 //  o.Init();
@@ -200,5 +200,54 @@ int main() {
 //  }
 //  nested_loop_join_executor.End();
 //  testBTree();
+
+  std::ifstream input_sqls;
+  input_sqls.open("/mnt/c/Users/scorp/CLionProjects/toyDB/schema.sql", std::ifstream::binary);
+  std::string cur_sql, cur_line;
+  size_t cnt = 0;
+  while (!input_sqls.eof()) {
+	// Output the text from the file
+	std::getline(input_sqls, cur_line);
+	cur_line.erase(remove(cur_line.begin(), cur_line.end(), '\r'), cur_line.end());
+	if (!cur_line.empty()) {
+	  cur_sql.append(cur_line);
+	} else {
+	  std::cout << cur_sql << std::endl;
+	  p.parse(cur_sql);
+	  o.plan(p.stmt_tree_);
+	  o.Init();
+	  o.execute();
+	  cur_sql = "";
+	  cnt++;
+	}
+  }
+  std::cout << cur_sql << std::endl;
+  p.parse(cur_sql);
+  o.plan(p.stmt_tree_);
+  o.Init();
+  o.execute();
+  ++cnt;
+  input_sqls.close();
+//  auto sqls = {"CREATE TABLE info_type (id int, info string(32))", "copy info_type from imdb/info_type.csv",
+//			   "select info_type.info from info_type"};
+//  std::string sql_string;
+//  for (auto sql : sqls) {
+//	p.parse(sql);
+//	o.plan(p.stmt_tree_);
+//	o.Init();
+//	o.execute();
+//  }
+//  while (true) {
+//	std::cout << "toyDB SQL input: ";
+//	std::getline(std::cin, sql_string);
+////	std::cout << sql_string << std::endl;
+//	if (sql_string == "quit") {
+//	  break;
+//	}
+//	p.parse(sql_string);
+//	o.plan(p.stmt_tree_);
+//	o.Init();
+//	o.execute();
+//  }
   return 0;
 }

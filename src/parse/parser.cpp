@@ -11,6 +11,7 @@
 #include "type.h"
 #include "schema.h"
 
+typedef expr *pExpr;
 queryTree::queryTree() {
   this->command_ = INVALID_COMMAND;
   this->range_table_ = std::vector<std::string>();
@@ -275,6 +276,7 @@ void parser::parse(const std::string &sql_string) {
 	  cur_expr->type = SCHEMA;
 	  cur_expr->alias = std::move(tab_name);
 	  for (const auto &it : buf) {
+		// Format: COL_NAME dtype others
 		std::vector<std::string> out;
 		split(it, " ", out);
 		std::string col_name = out.at(out.size() - 2);
@@ -287,9 +289,11 @@ void parser::parse(const std::string &sql_string) {
 		  type_id = typeid(float).hash_code();
 		  width = sizeof(float);
 		} else if (std::strncmp(dtype_name.c_str(), "STRING", 6) == 0) {
+		  // col_name string(length)
 		  type_id = typeid(std::string).hash_code();
 		  width = std::stoul(dtype_name.substr(7, -1));
-		} else if (std::strcmp(dtype_name.c_str(), "SIZE_T") == 0) {
+		}
+		else if (std::strcmp(dtype_name.c_str(), "SIZE_T") == 0) {
 		  type_id = typeid(size_t).hash_code();
 		  width = sizeof(size_t);
 		}
@@ -306,7 +310,7 @@ void parser::parse(const std::string &sql_string) {
 	  std::vector<std::string> buf;
 	  split(upp_sql, " ", buf);
 	  assert(buf.size() == 4);
-	  auto cur_expr = new expr;
+	  pExpr cur_expr = new expr;
 	  cur_expr->type = SCHEMA;
 	  cur_expr->alias = buf.at(1);
 	  if (buf.at(2) == "FROM") {
