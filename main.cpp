@@ -109,15 +109,20 @@ int main() {
   o.Init();
   o.execute();
 
+//  p.parse(
+//	  "SELECT table1.relId_, table1.content from table1 where table1.relId_>95");
   p.parse(
 	  "SELECT table1.relId_, table1.content, table2.content from table1, table2 where table1.relId_ = table2.relId_ and table1.relId_>95");
   o.plan(p.stmt_tree_);
   auto begin = std::chrono::high_resolution_clock::now();
-  o.Init_all();
-  o.execute_all();
+  o.Init();
+  auto init_time = std::chrono::high_resolution_clock::now();
+  o.execute();
   auto end = std::chrono::high_resolution_clock::now();
-  double elapsed_time_ms = std::chrono::duration<double, std::milli>(end - begin).count();
-  std::cout << elapsed_time_ms;
+  double init_time_ms = std::chrono::duration<double, std::milli>(init_time - begin).count();
+  double exec_time_ms = std::chrono::duration<double, std::milli>(end - init_time).count();
+
+  std::cout << exec_time_ms << "ms | " << init_time_ms << "ms";
 //  p.parse("CREATE TABLE tmp_table (col1 int, col2 string(10)");
 //  o.plan(p.stmt_tree_);
 //  o.Init();

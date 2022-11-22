@@ -174,18 +174,14 @@ std::vector<size_t> rel::GetColSizes() {
   return out;
 }
 rel::rel() {
-  this->relId_ = std::time(nullptr);
-  while (table_schema.TableID2Table.find(this->relId_) != table_schema.TableID2Table.end()) {
-	this->relId_ = std::time(nullptr);
-  }
+  this->relId_ = table_schema.GetNewTableID();
+  table_schema.tableIDs.insert(this->relId_);
   table_schema.TableID2Table[this->relId_] = this;
   table_schema.Table2IDName[this] = std::tie(this->relId_, "No Name");
 }
 rel::rel(const std::string &name) {
-  this->relId_ = std::time(nullptr);
-  while (table_schema.TableID2Table.find(this->relId_) != table_schema.TableID2Table.end()) {
-	this->relId_ = std::time(nullptr);
-  }
+  this->relId_ = table_schema.GetNewTableID();
+  table_schema.tableIDs.insert(this->relId_);
   table_schema.TableID2Table[this->relId_] = this;
   table_schema.Table2IDName[this] = std::tie(this->relId_, "No Name");
   this->SetName(name);

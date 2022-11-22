@@ -86,22 +86,53 @@ void seqScanExecutor::Next(void *dst) {
 	  //	tfree(data_ptr);
 	  //	((std::vector<toyDBTUPLE> *)dst)->emplace_back((char *)buf, len, sizes);
 	} else {
-	  // emit a batch at a time TODO: predicate validation
-	  for (auto i = 0; i < BATCH_SIZE; i++) {
-		char *buf = talloc(len * BATCH_SIZE);
+	  // emit a batch at a time
+	  // TODO: currently still a loop of volcano model. need to implement vectorized storage&predicate validation.
+	  size_t cnt = 0;
+	  char *buf = talloc(len * BATCH_SIZE);
+	  std::memset(buf, 0, len * BATCH_SIZE);
+	  while (cnt < BATCH_SIZE) {
 		char *data_ptr = talloc(sizeof(char *));
 		this->mem_ptr_ += sizeof(char *);
-		std::memcpy(&data_ptr, this->mem_ptr_, sizeof(char *));
-		if (data_ptr == nullptr) {
+		if (std::memcmp(this->mem_ptr_, buf, sizeof(int))
+			== 0) { // Little trick: currently buf is an empty char array with min. 4 bytes.
 		  //last toyDBTUPLE
 		  std::memcpy(&data_ptr, this->mem_ptr_ - sizeof(char *), sizeof(char *));
-		  data_ptr -= len;
+		  if (data_ptr == nullptr) {
+			// One past the last toyDBTuple
+			// clear dst vector
+//			((std::vector<toyDBTUPLE> *)dst)->clear();
+//			tfree(buf);
+			return;
+		  } else {
+			data_ptr -= len;
+		  }
+		} else {
+		  std::memcpy(&data_ptr, this->mem_ptr_, sizeof(char *));
 		}
-		std::memcpy(buf, data_ptr, len);
-		((std::vector<toyDBTUPLE> *)dst)->emplace_back((char *)buf, len, sizes, this->table_->GetTypeIDs());
-		tfree(buf, len * BATCH_SIZE);
-		tfree(data_ptr, sizeof(char *));
+		std::memcpy(buf + cnt * len, data_ptr, len);
+		auto type_ids = this->table_->GetTypeIDs();
+		toyDBTUPLE tmp((char *)buf, len, sizes, type_ids);
+		tmp.ancestor_ = this->table_->GetID();
+		tmp.table_ = this->view_->GetID();
+		// Verify predicates
+		bool matched = true;
+		for (auto qual : this->quals_) {
+		  size_t offset = this->table_->GetOffset(std::get<3>(qual->data_srcs[0]));
+		  char *rhs = (char *)std::get<3>(qual->data_srcs[1]).c_str();
+		  if (qual->type != COL && !qual->compareFunc((char *)buf + offset, (char *)rhs)) {
+			matched = false;
+			break;
+		  }
+		}
+		if (matched) {
+		  ((std::vector<toyDBTUPLE> *)dst)->at(cnt) = tmp;
+		  ++this->cnt_;
+		  ++cnt;
+		  break;
+		}
 	  }
+	  tfree(buf);
 	}
   }
 }

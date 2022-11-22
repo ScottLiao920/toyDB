@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.22)
 project(toyDB)
 
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_FLAGS "-Wall -Wextra -g -O0")
+set(CMAKE_CXX_FLAGS "-Wall -Wextra -g -O0 -fno-omit-frame-pointer -mno-omit-leaf-frame-pointer")
 #set(CMAKE_CXX_FLAGS_DEBUG "-g")
 #set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
